@@ -2881,6 +2881,21 @@ body {
   color: var(--primary);
 }
 
+.rw-nav-logout {
+  color: #e74c3c !important;
+  border-top: 1px solid var(--border-color);
+  margin-top: 1rem;
+  padding-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rw-nav-logout:hover {
+  background: rgba(231, 76, 60, 0.1) !important;
+  color: #c0392b !important;
+}
+
 .rw-main {
   padding: 32px;
   max-width: 1400px;

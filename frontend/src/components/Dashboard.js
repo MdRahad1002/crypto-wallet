@@ -33,7 +33,7 @@ const toNumber = (value) => {
 };
 
 function Dashboard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [balances, setBalances] = useState([]);
   const [wallets, setWallets] = useState([]);
@@ -70,6 +70,12 @@ function Dashboard() {
 
   const closeMobileMenu = () => {
     setMobileMenuOpen(false);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+    closeMobileMenu();
   };
 
   useEffect(() => {
@@ -435,6 +441,22 @@ function Dashboard() {
             {isAdmin && (
               <Link to="/admin" className="rw-nav-link" onClick={closeMobileMenu}>Admin</Link>
             )}
+            <button 
+              type="button" 
+              className="rw-nav-link rw-nav-logout" 
+              onClick={handleLogout}
+              style={{ 
+                color: '#e74c3c', 
+                fontWeight: 600,
+                borderTop: '1px solid var(--border-color)',
+                marginTop: 'auto',
+                paddingTop: '1rem',
+                marginTop: '1rem'
+              }}
+            >
+              <Icon name="logOut" size={18} style={{ marginRight: '0.5rem' }} />
+              Sign Out
+            </button>
           </nav>
         </aside>
 
