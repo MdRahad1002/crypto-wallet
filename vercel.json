@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm install && cd frontend && npm install && CI=false REACT_APP_API_URL=https://crypto-wallet-blush-beta.vercel.app/api REACT_APP_SUPABASE_URL=https://bzrmdqvzqcbnpzhurzcr.supabase.co REACT_APP_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6cm1kcXZ6cWNibnB6aHVyemNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NDE3NzYsImV4cCI6MjA4ODAxNzc3Nn0.B2tthSf4tJNvMrFxP28Ys3G3opckevn1smSe50svG8w npm run build",
+  "buildCommand": "npm install && cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/build",
   "framework": null,
   "headers": [
@@ -29,6 +29,10 @@
   ],
   "env": {
     "NODE_ENV": "production",
+    "CI": "false",
+    "REACT_APP_API_URL": "https://crypto-wallet-blush-beta.vercel.app/api",
+    "REACT_APP_SUPABASE_URL": "https://bzrmdqvzqcbnpzhurzcr.supabase.co",
+    "REACT_APP_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6cm1kcXZ6cWNibnB6aHVyemNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NDE3NzYsImV4cCI6MjA4ODAxNzc3Nn0.B2tthSf4tJNvMrFxP28Ys3G3opckevn1smSe50svG8w",
     "SUPABASE_URL": "https://bzrmdqvzqcbnpzhurzcr.supabase.co",
     "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6cm1kcXZ6cWNibnB6aHVyemNyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjQ0MTc3NiwiZXhwIjoyMDg4MDE3Nzc2fQ.VkVLvxmyGVr09DsidTV4GMgEVReYaXhWlM7llH5LIFg",
     "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6cm1kcXZ6cWNibnB6aHVyemNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NDE3NzYsImV4cCI6MjA4ODAxNzc3Nn0.B2tthSf4tJNvMrFxP28Ys3G3opckevn1smSe50svG8w",
