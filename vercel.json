@@ -39,7 +39,7 @@
     "SUPABASE_JWT_SECRET": "310rivrncr8EKOR06gb2LcNpCTt9hiZ7poV30EcxgNQPhktScRKdJ5MZzKfgv3ck58T9G0ZRu+PwB5dnv6uMAQ==",
     "COOKIE_SECRET": "ae1eb62b64c834d2c77b932980b54b682542ace5729a2ef4d782b04f52914a59",
     "JWT_SECRET": "ca8473b0c77a9908f35bf700db8f9e7f6fd46a302d07463eda8f43b97603f8648b4dd63dd482f8cb3e535db38f2ae0e1",
-    "CORS_ORIGIN": "https://crypto-wallet-blush-beta.vercel.app",
+    "CORS_ORIGIN": "https://crypto-wallet-blush-beta.vercel.app,https://www.bluewalletsecurity.com",
     "ADMIN_ALLOW_REMOTE": "true",
     "ADMIN_ALLOWED_IPS": "*",
     "WALLET_MASTER_KEY": "24b2891f3e2bbd3870268f08eba5059b178302799afd9ef9a6154d7fdc5a4d1f"
