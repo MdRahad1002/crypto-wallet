@@ -199,9 +199,8 @@ function RecoverWalletPage() {
     try {
       const response = await pricesAPI.getLivePrices();
       livePricesRef.current = response.data;
-      setLivePrices(response.data);
     } catch (error) {
-      setLivePrices(null);
+      livePricesRef.current = null;
     }
   }, []); // stable — no state dependencies
 
