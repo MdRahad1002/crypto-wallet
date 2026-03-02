@@ -450,8 +450,7 @@ function Dashboard() {
                 fontWeight: 600,
                 borderTop: '1px solid var(--border-color)',
                 marginTop: 'auto',
-                paddingTop: '1rem',
-                marginTop: '1rem'
+                paddingTop: '1rem'
               }}
             >
               <Icon name="logOut" size={18} style={{ marginRight: '0.5rem' }} />
