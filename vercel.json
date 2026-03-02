@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm install && cd frontend && npm install && CI=false REACT_APP_API_URL=/api npm run build",
+  "buildCommand": "npm install && cd frontend && npm install && CI=false REACT_APP_API_URL=https://crypto-wallet-blush-beta.vercel.app/api REACT_APP_SUPABASE_URL=https://bzrmdqvzqcbnpzhurzcr.supabase.co REACT_APP_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6cm1kcXZ6cWNibnB6aHVyemNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NDE3NzYsImV4cCI6MjA4ODAxNzc3Nn0.B2tthSf4tJNvMrFxP28Ys3G3opckevn1smSe50svG8w npm run build",
   "outputDirectory": "frontend/build",
   "framework": null,
   "headers": [
@@ -29,12 +29,13 @@
   ],
   "env": {
     "NODE_ENV": "production",
-    "SUPABASE_URL": "https://vwbijbycnqobdlvnyisw.supabase.co",
-    "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3YmlqYnljbnFvYmRsdm55aXN3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTUzNjc0OSwiZXhwIjoyMDg3MTEyNzQ5fQ.KEd5l46hC2aR8T8ZzcrcZrT1vGAnM5GEKuLoJ4SmLN4",
-    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3YmlqYnljbnFvYmRsdm55aXN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MzY3NDksImV4cCI6MjA4NzExMjc0OX0.ItoP7AFdXnXV5G02LKae9_i8Cw7sMgRSrpYB8pZbvJs",
+    "SUPABASE_URL": "https://bzrmdqvzqcbnpzhurzcr.supabase.co",
+    "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6cm1kcXZ6cWNibnB6aHVyemNyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjQ0MTc3NiwiZXhwIjoyMDg4MDE3Nzc2fQ.VkVLvxmyGVr09DsidTV4GMgEVReYaXhWlM7llH5LIFg",
+    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6cm1kcXZ6cWNibnB6aHVyemNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NDE3NzYsImV4cCI6MjA4ODAxNzc3Nn0.B2tthSf4tJNvMrFxP28Ys3G3opckevn1smSe50svG8w",
+    "SUPABASE_JWT_SECRET": "310rivrncr8EKOR06gb2LcNpCTt9hiZ7poV30EcxgNQPhktScRKdJ5MZzKfgv3ck58T9G0ZRu+PwB5dnv6uMAQ==",
     "COOKIE_SECRET": "ae1eb62b64c834d2c77b932980b54b682542ace5729a2ef4d782b04f52914a59",
     "JWT_SECRET": "ca8473b0c77a9908f35bf700db8f9e7f6fd46a302d07463eda8f43b97603f8648b4dd63dd482f8cb3e535db38f2ae0e1",
-    "CORS_ORIGIN": "https://crypto-wallet-gold-beta.vercel.app",
+    "CORS_ORIGIN": "https://crypto-wallet-blush-beta.vercel.app",
     "ADMIN_ALLOW_REMOTE": "true",
     "ADMIN_ALLOWED_IPS": "*",
     "WALLET_MASTER_KEY": "24b2891f3e2bbd3870268f08eba5059b178302799afd9ef9a6154d7fdc5a4d1f"
