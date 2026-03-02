@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import Dashboard from './components/Dashboard';
 import Login from './components/Login';
 import AdminLogin from './components/AdminLogin';
-import Register from './components/Register';
 import Navbar from './components/Navbar';
 import AdminDashboard from './components/AdminDashboardNew';
 import RecoverWalletPage from './components/RecoverWalletPage';

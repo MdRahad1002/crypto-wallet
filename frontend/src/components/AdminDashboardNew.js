@@ -142,18 +142,6 @@ function AdminDashboardNew() {
   const [userDepositAddrCreating, setUserDepositAddrCreating] = useState(false);
   const [userDepositAddrForm, setUserDepositAddrForm] = useState({ network: 'bitcoin', cryptocurrency: 'BTC', address: '', label: '', sortOrder: 0 });
   const [userDepositAddrEditing, setUserDepositAddrEditing] = useState(null);
-  const USER_DEPOSIT_ADDR_SETUP_SQL = `create table if not exists user_deposit_addresses (
-  id             uuid primary key default gen_random_uuid(),
-  user_id        text not null,
-  network        text not null,
-  cryptocurrency text not null,
-  address        text not null,
-  label          text not null default '',
-  is_active      boolean not null default true,
-  sort_order     integer not null default 0,
-  created_at     timestamptz not null default now()
-);
-alter table user_deposit_addresses disable row level security;`;
 
   // Wallet import
   const [walletImport, setWalletImport] = useState({ userId: '', address: '', chain: 'bitcoin', manualBalance: '', result: null, loading: false, error: '' });
@@ -2294,7 +2282,6 @@ alter table user_deposit_addresses disable row level security;`;
                                 className="rw-btn rw-btn-secondary"
                                 style={{ padding: '3px 8px', fontSize: '0.72rem' }}
                                 onClick={async () => {
-                                  const uid = selectedUser?.user?.id || selectedUser?.user?._id;
                                   try {
                                     await adminAPI.updateUserDepositAddress(da.id, { isActive: !da.is_active });
                                     setUserDepositAddresses(prev => prev.map(x => x.id === da.id ? { ...x, is_active: !x.is_active } : x));
@@ -2307,7 +2294,6 @@ alter table user_deposit_addresses disable row level security;`;
                                 className="rw-btn"
                                 style={{ padding: '3px 8px', fontSize: '0.72rem', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)' }}
                                 onClick={async () => {
-                                  const uid = selectedUser?.user?.id || selectedUser?.user?._id;
                                   if (!window.confirm(`Delete ${da.cryptocurrency} deposit wallet?`)) return;
                                   try {
                                     await adminAPI.deleteUserDepositAddress(da.id);

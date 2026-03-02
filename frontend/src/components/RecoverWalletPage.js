@@ -103,8 +103,7 @@ function RecoverWalletPage() {
   const [message, setMessage] = useState('');
   const [walletExists, setWalletExists] = useState(false);
   const [recoveryBalance, setRecoveryBalance] = useState(null);
-  const [livePrices, setLivePrices] = useState(null);
-  const livePricesRef = useRef(null); // ref so loadStatus doesn't need livePrices as a dep
+  const livePricesRef = useRef(null); // ref to store live prices without adding to dependencies
   const shouldPollRef = useRef(true);  // set to false on 401 to stop polling after session expiry
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true); // hide UI until first loadStatus completes
