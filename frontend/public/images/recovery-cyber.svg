@@ -1,0 +1,17 @@
+<svg width="640" height="320" viewBox="0 0 640 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="640" height="320" rx="24" fill="#0B1220"/>
+  <rect x="24" y="24" width="592" height="272" rx="18" fill="#0F1B2D"/>
+  <path d="M60 92H580" stroke="#1A73E8" stroke-width="2" stroke-dasharray="6 10"/>
+  <path d="M60 160H580" stroke="#1A73E8" stroke-width="2" stroke-dasharray="6 10"/>
+  <path d="M60 228H580" stroke="#1A73E8" stroke-width="2" stroke-dasharray="6 10"/>
+  <circle cx="120" cy="92" r="10" fill="#1A73E8"/>
+  <circle cx="320" cy="160" r="10" fill="#1A73E8"/>
+  <circle cx="520" cy="228" r="10" fill="#1A73E8"/>
+  <rect x="100" y="120" width="140" height="28" rx="8" fill="#152A45"/>
+  <rect x="400" y="188" width="160" height="28" rx="8" fill="#152A45"/>
+  <rect x="260" y="52" width="120" height="28" rx="8" fill="#152A45"/>
+  <path d="M120 92V52" stroke="#4EA1FF" stroke-width="2"/>
+  <path d="M320 160V120" stroke="#4EA1FF" stroke-width="2"/>
+  <path d="M520 228V188" stroke="#4EA1FF" stroke-width="2"/>
+  <text x="50%" y="280" text-anchor="middle" fill="#7AA7FF" font-size="14" font-family="Inter, Arial">Decrypting secure recovery seed...</text>
+</svg>

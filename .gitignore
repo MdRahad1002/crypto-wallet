@@ -1,0 +1,24 @@
+node_modules/
+.env
+.env.local
+build/
+dist/
+*.log
+.DS_Store
+package-lock.json
+
+# TLS certificates (dev self-signed — never commit private keys)
+backend/certs/*.key*
+backend/certs/*.pem
+backend/certs/*.crt
+backend/certs/*.cert*
+
+# Runtime logs
+backend/logs/
+
+# Snyk result cache and binary
+snyk-code.json
+snyk.exe
+
+# Supabase local setup script (contains credentials — never commit)
+setup-supabase.ps1

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 56" fill="none">
+  <!-- Icon: stacked blue layered squares -->
+  <rect x="2" y="8" width="44" height="40" rx="9" fill="#1A5DC8"/>
+  <rect x="6" y="14" width="36" height="28" rx="7" fill="#2E7BE8"/>
+  <rect x="10" y="20" width="28" height="18" rx="5" fill="#60B5FF"/>
+  <rect x="14" y="26" width="20" height="10" rx="3" fill="#A8D8FF"/>
+
+  <!-- Wordmark: "bluewallet" -->
+  <text x="56" y="35" font-family="'Segoe UI', Arial, sans-serif" font-size="22" font-weight="700" fill="#1A3B6E" letter-spacing="-0.5">bluewallet</text>
+</svg>

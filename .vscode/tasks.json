@@ -1,0 +1,32 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Frontend dev server",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"client"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "API endpoint check",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"backend/test-endpoints.js"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Backend endpoint verification",
+			"type": "shell",
+			"command": "node backend/test-endpoints.js",
+			"isBackground": false
+		}
+	]
+}

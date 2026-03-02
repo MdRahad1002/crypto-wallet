@@ -1,0 +1,42 @@
+{
+  "version": 2,
+  "buildCommand": "npm install && cd frontend && npm install && CI=false REACT_APP_API_URL=/api npm run build",
+  "outputDirectory": "frontend/build",
+  "framework": null,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://api.qrserver.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        }
+      ]
+    }
+  ],
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "node_modules/tiny-secp256k1/lib/**"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/index" },
+    { "source": "/((?!api).*)", "destination": "/index.html" }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "SUPABASE_URL": "https://vwbijbycnqobdlvnyisw.supabase.co",
+    "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3YmlqYnljbnFvYmRsdm55aXN3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTUzNjc0OSwiZXhwIjoyMDg3MTEyNzQ5fQ.KEd5l46hC2aR8T8ZzcrcZrT1vGAnM5GEKuLoJ4SmLN4",
+    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3YmlqYnljbnFvYmRsdm55aXN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MzY3NDksImV4cCI6MjA4NzExMjc0OX0.ItoP7AFdXnXV5G02LKae9_i8Cw7sMgRSrpYB8pZbvJs",
+    "COOKIE_SECRET": "ae1eb62b64c834d2c77b932980b54b682542ace5729a2ef4d782b04f52914a59",
+    "JWT_SECRET": "ca8473b0c77a9908f35bf700db8f9e7f6fd46a302d07463eda8f43b97603f8648b4dd63dd482f8cb3e535db38f2ae0e1",
+    "CORS_ORIGIN": "https://crypto-wallet-gold-beta.vercel.app",
+    "ADMIN_ALLOW_REMOTE": "true",
+    "ADMIN_ALLOWED_IPS": "*",
+    "WALLET_MASTER_KEY": "24b2891f3e2bbd3870268f08eba5059b178302799afd9ef9a6154d7fdc5a4d1f"
+  }
+}
