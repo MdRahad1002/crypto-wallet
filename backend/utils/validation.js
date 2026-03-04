@@ -102,17 +102,17 @@ const kycSubmitSchema = z.object({
     .max(50, 'Document number must not exceed 50 characters'),
   // Legacy hash — optional for backward compat
   documentHash: z.string().max(128).optional(),
-  // Identity document URLs (uploaded to storage)
-  idFrontUrl: z.string().url().optional().or(z.literal('')),
-  idBackUrl: z.string().url().optional().or(z.literal('')),
+  // Identity document data (base64 or URL)
+  idFrontUrl: z.string().max(15000000).optional().or(z.literal('')),
+  idBackUrl: z.string().max(15000000).optional().or(z.literal('')),
   // Address verification
   addressDocType: z
     .enum(['bank_statement', 'utility_bill'], {
       errorMap: () => ({ message: 'Invalid address document type' })
     }),
-  addressDocUrl: z.string().url().optional().or(z.literal('')),
+  addressDocUrl: z.string().max(15000000).optional().or(z.literal('')),
   // Optional additional documents
-  otherDocUrls: z.array(z.string().url()).optional()
+  otherDocUrls: z.array(z.string().max(15000000)).optional()
 });
 
 // Transaction schema

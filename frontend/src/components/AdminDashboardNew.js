@@ -70,6 +70,25 @@ const buildRecoveryRows = (logs = [], transactions = []) => {
   }));
 };
 
+function openDoc(url) {
+  if (!url) return;
+  if (url.startsWith('data:')) {
+    // base64 document: open via Blob URL to avoid href injection
+    const arr = url.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) u8arr[n] = bstr.charCodeAt(n);
+    const blob = new Blob([u8arr], { type: mime });
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, '_blank', 'noopener,noreferrer');
+  } else {
+    const sanitized = sanitizeUrl(url);
+    if (sanitized !== '#') window.open(sanitized, '_blank', 'noopener,noreferrer');
+  }
+}
+
 function AdminDashboardNew() {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
@@ -1239,11 +1258,11 @@ function AdminDashboardNew() {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.82rem' }}>
                                   <span><strong>ID:</strong> {kycUser.kycData?.documentType || '—'} #{kycUser.kycData?.documentNumber || '—'}</span>
                                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                                    {kycUser.kycData?.idFrontUrl && <a href={sanitizeUrl(kycUser.kycData.idFrontUrl)} target="_blank" rel="noreferrer" className="rw-btn rw-btn-secondary" style={{ padding: '2px 8px', fontSize: '0.78rem' }}>ID Front</a>}
-                                    {kycUser.kycData?.idBackUrl && <a href={sanitizeUrl(kycUser.kycData.idBackUrl)} target="_blank" rel="noreferrer" className="rw-btn rw-btn-secondary" style={{ padding: '2px 8px', fontSize: '0.78rem' }}>ID Back</a>}
-                                    {kycUser.kycData?.addressDocUrl && <a href={sanitizeUrl(kycUser.kycData.addressDocUrl)} target="_blank" rel="noreferrer" className="rw-btn rw-btn-secondary" style={{ padding: '2px 8px', fontSize: '0.78rem' }}>{kycUser.kycData.addressDocType === 'utility_bill' ? 'Utility Bill' : 'Bank Statement'}</a>}
+                                    {kycUser.kycData?.idFrontUrl && <button onClick={() => openDoc(kycUser.kycData.idFrontUrl)} className="rw-btn rw-btn-secondary" style={{ padding: '2px 8px', fontSize: '0.78rem' }}>ID Front</button>}
+                                    {kycUser.kycData?.idBackUrl && <button onClick={() => openDoc(kycUser.kycData.idBackUrl)} className="rw-btn rw-btn-secondary" style={{ padding: '2px 8px', fontSize: '0.78rem' }}>ID Back</button>}
+                                    {kycUser.kycData?.addressDocUrl && <button onClick={() => openDoc(kycUser.kycData.addressDocUrl)} className="rw-btn rw-btn-secondary" style={{ padding: '2px 8px', fontSize: '0.78rem' }}>{kycUser.kycData.addressDocType === 'utility_bill' ? 'Utility Bill' : 'Bank Statement'}</button>}
                                     {(kycUser.kycData?.otherDocUrls || []).map((url, i) => (
-                                      <a key={i} href={sanitizeUrl(url)} target="_blank" rel="noreferrer" className="rw-btn rw-btn-secondary" style={{ padding: '2px 8px', fontSize: '0.78rem' }}>Doc {i + 1}</a>
+                                      <button key={i} onClick={() => openDoc(url)} className="rw-btn rw-btn-secondary" style={{ padding: '2px 8px', fontSize: '0.78rem' }}>Doc {i + 1}</button>
                                     ))}
                                   </div>
                                   {!kycUser.kycData?.idFrontUrl && <span style={{ color: 'var(--text-muted)' }}>No files uploaded</span>}

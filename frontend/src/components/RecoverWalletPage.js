@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI, pricesAPI, walletAPI } from '../services/api';
 import { useAuth } from '../auth/useAuth';
-import { supabase } from '../lib/supabaseClient';
 
 const initialForm = {
   fullName: '',
@@ -15,24 +14,19 @@ const initialForm = {
   otherDocFiles: []
 };
 
-const KYC_BUCKET = 'kyc-documents';
+async function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
+    reader.readAsDataURL(file);
+  });
+}
 
 async function hashFile(file) {
   const buffer = await file.arrayBuffer();
   const digest = await crypto.subtle.digest('SHA-256', buffer);
   return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function uploadFile(file, userId, fieldName) {
-  if (!file) throw new Error(`No file provided for ${fieldName}`);
-  if (!supabase) throw new Error('Storage not configured. Please contact support.');
-  const ext = file.name.split('.').pop();
-  const path = `${userId}/${fieldName}_${Date.now()}.${ext}`;
-  const { error } = await supabase.storage.from(KYC_BUCKET).upload(path, file, { contentType: file.type, upsert: true });
-  if (error) throw new Error(`Failed to upload ${fieldName}: ${error.message}`);
-  const { data } = supabase.storage.from(KYC_BUCKET).getPublicUrl(path);
-  if (!data?.publicUrl) throw new Error(`Could not get public URL for ${fieldName}. Ensure the '${KYC_BUCKET}' Supabase bucket exists and is set to public.`);
-  return data.publicUrl;
 }
 
 function FileUploadField({ label, hint, file, onChange, accept, required }) {
@@ -232,33 +226,27 @@ function RecoverWalletPage() {
     try {
       try { await authAPI.fetchCsrfToken(); } catch (_) { /* non-fatal */ }
 
-      const userId = user?.id || user?._id || 'unknown';
+      // Convert files to base64 — no external storage needed
+      setUploadProgress('Reading ID document...');
+      const idFrontUrl = await fileToBase64(form.idFrontFile);
 
-      // Upload identity document front
-      setUploadProgress('Uploading ID front...');
-      const idFrontUrl = await uploadFile(form.idFrontFile, userId, 'id_front');
-
-      // Upload identity document back (if required)
-      let idBackUrl = null;
+      let idBackUrl = '';
       if (needsBack && form.idBackFile) {
-        setUploadProgress('Uploading ID back...');
-        idBackUrl = await uploadFile(form.idBackFile, userId, 'id_back');
+        setUploadProgress('Reading ID back...');
+        idBackUrl = await fileToBase64(form.idBackFile);
       }
 
-      // Upload address document
-      setUploadProgress('Uploading address document...');
-      const addressDocUrl = await uploadFile(form.addressDocFile, userId, 'address_doc');
+      setUploadProgress('Reading address document...');
+      const addressDocUrl = await fileToBase64(form.addressDocFile);
 
-      // Upload optional other documents
       const otherDocUrls = [];
       for (let i = 0; i < form.otherDocFiles.length; i++) {
-        setUploadProgress(`Uploading additional document ${i + 1}...`);
-        const url = await uploadFile(form.otherDocFiles[i], userId, `other_doc_${i}`);
-        if (url) otherDocUrls.push(url);
+        setUploadProgress(`Reading additional document ${i + 1}...`);
+        const b64 = await fileToBase64(form.otherDocFiles[i]);
+        if (b64) otherDocUrls.push(b64);
       }
 
-      // Hash the front doc as legacy hash field
-      const documentHash = form.idFrontFile ? await hashFile(form.idFrontFile) : '';
+      const documentHash = await hashFile(form.idFrontFile);
 
       setUploadProgress('Submitting...');
       await walletAPI.submitKyc({
@@ -266,10 +254,10 @@ function RecoverWalletPage() {
         documentType: form.documentType,
         documentNumber: form.documentNumber,
         documentHash,
-        idFrontUrl: idFrontUrl || '',
-        idBackUrl: idBackUrl || '',
+        idFrontUrl,
+        idBackUrl,
         addressDocType: form.addressDocType,
-        addressDocUrl: addressDocUrl || '',
+        addressDocUrl,
         otherDocUrls
       });
 
