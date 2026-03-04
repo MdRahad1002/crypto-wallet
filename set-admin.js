@@ -22,9 +22,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 async function setAdmin() {
   try {
-    const email = 'info@bluewalletsecurity.com';
-    const password = 'SecureP@ss123!Admin2026';
-    const name = 'System Admin';
+    const email = process.env.ADMIN_EMAIL || 'info@bluewalletsecurity.com';
+    const password = process.env.ADMIN_PASSWORD;
+    const name = process.env.ADMIN_NAME || 'System Admin';
+
+    if (!password) {
+      console.error('\n❌ Error: ADMIN_PASSWORD environment variable must be set\n');
+      console.error('   Example: ADMIN_PASSWORD="YourSecurePassword" node set-admin.js\n');
+      process.exit(1);
+    }
 
     console.log('🔐 Setting up single admin user...\n');
 
@@ -94,7 +100,7 @@ async function setAdmin() {
       console.log(`✅ Admin created successfully!\n`);
       console.log('📊 Admin Details:');
       console.log(`   Email: ${email}`);
-      console.log(`   Password: ${password}`);
+      console.log(`   Password: ${'*'.repeat(password.length)}`);
       console.log(`   Name: ${name}`);
       console.log(`   ID: ${admin.id}`);
       console.log(`   Role: admin`);
