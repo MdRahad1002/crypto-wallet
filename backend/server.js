@@ -69,7 +69,7 @@ app.use(cors({
     'X-Request-Timestamp'
   ]
 }));
-app.use(express.json({ limit: '25mb' }));
+app.use(express.json({ limit: '4mb' }));
 let cookieSecret = process.env.COOKIE_SECRET;
 if (!cookieSecret) {
   // Generate a per-process secret rather than crashing the serverless function.

@@ -14,13 +14,50 @@ const initialForm = {
   otherDocFiles: []
 };
 
-async function fileToBase64(file) {
+// Max encoded size per file so the total payload stays under Vercel's 4.5 MB body limit.
+// Base64 inflates by ~33 %, so 1 MB raw ≈ 1.37 MB encoded.  Keep each file ≤ 1 MB raw.
+const MAX_RAW_BYTES = 1 * 1024 * 1024; // 1 MB
+const IMG_MAX_DIM   = 1400;            // longest side in pixels
+const IMG_QUALITY   = 0.75;            // JPEG quality
+
+function readFileAsDataURL(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
     reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
     reader.readAsDataURL(file);
   });
+}
+
+async function fileToBase64(file) {
+  // For images: resize + re-encode via canvas so they stay small
+  if (file.type.startsWith('image/')) {
+    const dataUrl = await readFileAsDataURL(file);
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        // Scale down if either dimension exceeds the limit
+        if (width > IMG_MAX_DIM || height > IMG_MAX_DIM) {
+          if (width >= height) { height = Math.round(height * IMG_MAX_DIM / width); width = IMG_MAX_DIM; }
+          else                 { width  = Math.round(width  * IMG_MAX_DIM / height); height = IMG_MAX_DIM; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width  = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', IMG_QUALITY));
+      };
+      img.onerror = () => reject(new Error(`Failed to load image: ${file.name}`));
+      img.src = dataUrl;
+    });
+  }
+
+  // For PDFs and other files: enforce hard size limit before encoding
+  if (file.size > MAX_RAW_BYTES) {
+    throw new Error(`File "${file.name}" is ${(file.size / 1024 / 1024).toFixed(1)} MB. Please upload a file smaller than 1 MB.`);
+  }
+  return readFileAsDataURL(file);
 }
 
 async function hashFile(file) {
