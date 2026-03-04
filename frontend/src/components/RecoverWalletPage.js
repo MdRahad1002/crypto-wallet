@@ -91,7 +91,7 @@ function toNumber(value) {
 }
 
 function RecoverWalletPage() {
-  const { user } = useAuth();
+  useAuth();
   const [form, setForm] = useState(initialForm);
   const [status, setStatus] = useState('NO_KYC');
   const [message, setMessage] = useState('');
