@@ -1279,21 +1279,28 @@ router.post('/users/:id/wallet-import', adminAuth, adminGuard(), async (req, res
     // ── Always try to fetch tx hashes from Blockchair (even with manual balance) ─
     if (manualBalanceBtc === undefined || manualBalanceBtc === '') {
     // Only get balance from Blockchair if no manual balance was given
+    const isBtcChain = chain === 'bitcoin' || chain === 'btc';
     try {
       let dashboard = null;
+
+      // Try Blockchair first
       try {
         dashboard = await blockchairService.getAddressDashboard(cleanAddress, chain);
       } catch (blockchairErr) {
-        // If Blockchair fails (rate limit / 429), try blockchain.info fallback for BTC
-        const isRateLimit = blockchairErr?.response?.status === 429 ||
-          (blockchairErr?.response?.status >= 500 && blockchairErr?.response?.status < 600);
-        if ((chain === 'bitcoin' || chain === 'btc') && isRateLimit) {
-          logger.warn('admin_wallet_blockchair_rate_limited_using_fallback', { address: cleanAddress });
+        logger.warn('admin_wallet_blockchair_error', { message: blockchairErr.message, address: cleanAddress });
+        // Fall through — dashboard stays null
+      }
+
+      // If Blockchair returned nothing and this is a BTC address, use blockchain.info fallback
+      if ((!dashboard || !dashboard[cleanAddress]) && isBtcChain) {
+        logger.warn('admin_wallet_using_blockchain_info_fallback', { address: cleanAddress });
+        try {
           dashboard = await blockchairService.getBitcoinDashboardFallback(cleanAddress);
-        } else {
-          throw blockchairErr;
+        } catch (fallbackErr) {
+          logger.warn('admin_wallet_fallback_also_failed', { message: fallbackErr.message });
         }
       }
+
       if (dashboard && dashboard[cleanAddress]) {
         const addrData = dashboard[cleanAddress].address || {};
         const confirmed   = addrData.balance            || 0;

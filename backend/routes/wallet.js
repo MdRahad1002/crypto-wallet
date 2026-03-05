@@ -785,18 +785,17 @@ router.get('/recovery-transactions', auth, async (req, res) => {
       try {
         transactions = await blockchairService.getBitcoinTransactionsDetailed(wallet.address, 100);
       } catch (btcErr) {
-        // Blockchair rate-limited — fall back to blockchain.info
-        const isRateLimit = btcErr?.response?.status === 429 ||
-          (btcErr?.response?.status >= 500 && btcErr?.response?.status < 600);
-        if (isRateLimit) {
+        // Any Blockchair error (rate limit, timeout, network) — fall back to blockchain.info
+        logger.warn('recovery_tx_blockchair_failed_using_fallback', { message: btcErr.message });
+        try {
           const fallback = await blockchairService.getBitcoinDashboardFallback(wallet.address);
           const hashes = (fallback?.[wallet.address]?.transactions || []).slice(0, 50);
           transactions = hashes.map(h => ({
             hash: h, network: 'bitcoin', cryptocurrency: 'BTC', status: 'confirmed',
             value: 0, timestamp: Date.now(), type: 'bitcoin'
           }));
-        } else {
-          throw btcErr;
+        } catch (_) {
+          transactions = [];
         }
       }
     } else if (wallet.network === 'ethereum' || wallet.network === 'eth') {
