@@ -1269,6 +1269,7 @@ router.post('/users/:id/wallet-import', adminAuth, adminGuard(), async (req, res
     let txHashes    = [];
     let detailedTxs = [];
     let blockchairFailed = false;
+    let fallbackRawTxs  = null; // set when blockchain.info fallback is used
 
     // If admin provided a manual balance, use it — but STILL try to fetch tx history
     if (manualBalanceBtc !== undefined && manualBalanceBtc !== '') {
@@ -1296,6 +1297,9 @@ router.post('/users/:id/wallet-import', adminAuth, adminGuard(), async (req, res
         logger.warn('admin_wallet_using_blockchain_info_fallback', { address: cleanAddress });
         try {
           dashboard = await blockchairService.getBitcoinDashboardFallback(cleanAddress);
+          if (dashboard?.[cleanAddress]?._rawTxs) {
+            fallbackRawTxs = dashboard[cleanAddress]._rawTxs;
+          }
         } catch (fallbackErr) {
           logger.warn('admin_wallet_fallback_also_failed', { message: fallbackErr.message });
         }
@@ -1341,6 +1345,11 @@ router.post('/users/:id/wallet-import', adminAuth, adminGuard(), async (req, res
     // Supported UTXO chains: bitcoin, btc, litecoin, dogecoin
     const isUtxoChain = chain === 'bitcoin' || chain === 'btc' || chain === 'litecoin' || chain === 'dogecoin';
     if (txHashes.length > 0 && isUtxoChain) {
+      // If we already have full tx data from blockchain.info fallback, use it directly
+      // — avoids a second Blockchair call that would also be rate-limited
+      if (fallbackRawTxs && fallbackRawTxs.length > 0) {
+        detailedTxs = blockchairService.parseBitcoinInfoTransactions(fallbackRawTxs, cleanAddress);
+      } else {
       try {
         const txData = await blockchairService.getTransactionBatch(txHashes, chain);
 
@@ -1379,6 +1388,7 @@ router.post('/users/:id/wallet-import', adminAuth, adminGuard(), async (req, res
         logger.warn('admin_wallet_import_tx_fetch_error', { message: err.message });
         // If batch fetch fails, skip tx import — balance from getAddressDashboard is still saved
       }
+      } // end else (Blockchair batch path)
     }
 
     // ── Add/update wallet row directly in user_wallets ───────────────────

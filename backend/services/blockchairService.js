@@ -83,11 +83,57 @@ class BlockchairService extends BaseService {
           unconfirmed_balance: 0,
           transaction_count: d.n_tx || 0
         },
-        transactions: (d.txs || []).map(tx => tx.hash)
+        transactions: (d.txs || []).map(tx => tx.hash),
+        // Store full tx objects for direct use (avoids second Blockchair call)
+        _rawTxs: d.txs || []
       }
     };
     this.setCache(cacheKey, result, 90000);
     return result;
+  }
+
+  /**
+   * Parse full transaction details from blockchain.info rawaddr response.
+   * Avoids a second Blockchair batch call when Blockchair is rate-limited.
+   * @param {Array} rawTxs - tx objects from blockchain.info rawaddr response
+   * @param {string} address - The wallet address (to determine direction)
+   * @returns {Array} Normalised transaction objects matching detailedTxs format
+   */
+  parseBitcoinInfoTransactions(rawTxs, address) {
+    return (rawTxs || []).map(tx => {
+      let valueChange = 0;
+      let isIncoming = false;
+      let isOutgoing = false;
+
+      (tx.inputs || []).forEach(input => {
+        const addr = input.prev_out?.addr;
+        if (addr === address) { valueChange -= input.prev_out?.value || 0; isOutgoing = true; }
+      });
+      (tx.out || []).forEach(output => {
+        if (output.addr === address) { valueChange += output.value || 0; isIncoming = true; }
+      });
+
+      const direction = isIncoming && !isOutgoing ? 'received'
+                      : isOutgoing && !isIncoming ? 'sent'
+                      : 'self';
+
+      const fromAddr = (tx.inputs || [])[0]?.prev_out?.addr || 'Multiple Inputs';
+      const toAddr   = (tx.out   || [])[0]?.addr            || 'Multiple Outputs';
+
+      return {
+        hash:          tx.hash,
+        from:          fromAddr,
+        to:            toAddr,
+        value:         Math.abs(valueChange) / 1e8,
+        timestamp:     tx.time ? tx.time * 1000 : Date.now(),
+        blockNumber:   tx.block_height || null,
+        confirmations: tx.confirmations || (tx.block_height ? 1 : 0),
+        status:        tx.block_height ? 'confirmed' : 'pending',
+        direction,
+        network:       'bitcoin',
+        cryptocurrency: 'BTC'
+      };
+    });
   }
 
   /**

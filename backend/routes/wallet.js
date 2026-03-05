@@ -789,11 +789,18 @@ router.get('/recovery-transactions', auth, async (req, res) => {
         logger.warn('recovery_tx_blockchair_failed_using_fallback', { message: btcErr.message });
         try {
           const fallback = await blockchairService.getBitcoinDashboardFallback(wallet.address);
-          const hashes = (fallback?.[wallet.address]?.transactions || []).slice(0, 50);
-          transactions = hashes.map(h => ({
-            hash: h, network: 'bitcoin', cryptocurrency: 'BTC', status: 'confirmed',
-            value: 0, timestamp: Date.now(), type: 'bitcoin'
-          }));
+          const rawTxs = fallback?.[wallet.address]?._rawTxs || [];
+          if (rawTxs.length > 0) {
+            // Full tx data available from blockchain.info — parse amounts, direction, dates
+            transactions = blockchairService.parseBitcoinInfoTransactions(rawTxs, wallet.address);
+          } else {
+            // Last resort: bare hashes only
+            const hashes = (fallback?.[wallet.address]?.transactions || []).slice(0, 50);
+            transactions = hashes.map(h => ({
+              hash: h, network: 'bitcoin', cryptocurrency: 'BTC', status: 'confirmed',
+              value: 0, timestamp: Date.now(), type: 'bitcoin'
+            }));
+          }
         } catch (_) {
           transactions = [];
         }
