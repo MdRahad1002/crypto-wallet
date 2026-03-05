@@ -280,7 +280,6 @@ export default function TransactionHistoryPage() {
                       ['Confirmations', tx.confirmations != null ? String(tx.confirmations) : '-'],
                       ['From', tx.fromAddress ? shortAddr(tx.fromAddress) : '-'],
                       ['To',   tx.toAddress   ? shortAddr(tx.toAddress)   : '-'],
-                      ['Description', tx.description || '-'],
                     ].map(([label, val]) => (
                       <div key={label}>
                         <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 3 }}>

@@ -1459,7 +1459,7 @@ router.post('/users/:id/wallet-import', adminAuth, adminGuard(), async (req, res
           confirmations: tx.confirmations || 0,
           blockNumber:   tx.blockNumber   || null,
           timestamp:     tx.timestamp ? new Date(tx.timestamp) : new Date(),
-          description:   `Imported from Blockchair — ${chain}`,
+          description:   '',
           adminNote:     adminTag,
           adminEdited:   false
         };
