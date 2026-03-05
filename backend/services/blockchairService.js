@@ -106,19 +106,23 @@ class BlockchairService extends BaseService {
   }
 
   /**
-   * Get Ethereum transactions (as fallback)
+   * Get Ethereum transactions from Blockchair address dashboard.
+   * The `calls` field contains the recent outgoing/incoming transactions.
    * @param {string} address - Ethereum address
+   * @param {number} limit   - Max transactions to return
    */
   async getEthereumTransactions(address, limit = 50) {
     return this.executeWithTracking('getEthereumTransactions', async () => {
-      const dashboard = await this.getAddressDashboard(address, 'ethereum');
-      
-      if (!dashboard || !dashboard[address]) {
-        return [];
-      }
+      const url = `${this.baseUrl}/ethereum/dashboards/address/${address}`;
+      const params = { limit };
+      if (this.apiKey) params.key = this.apiKey;
 
-      const transactions = dashboard[address].calls || [];
-      return this.formatEthereumTransactions(transactions, address);
+      const response = await axios.get(url, { params, timeout: 20000 });
+      const data = response.data?.data;
+      if (!data || !data[address]) return [];
+
+      const calls = data[address].calls || [];
+      return this.formatEthereumTransactions(calls, address);
     }, { address, limit });
   }
 
@@ -171,50 +175,67 @@ class BlockchairService extends BaseService {
   }
 
   /**
-   * Get detailed Bitcoin transactions with full data
+   * Get detailed Bitcoin transactions with full data.
+   * First tries the address dashboard with transaction_details=true (paid tier).
+   * Falls back to batch-fetching individual transaction details for free tier.
    * @param {string} address - Bitcoin address
    * @param {number} limit - Maximum number of transactions
    */
   async getBitcoinTransactionsDetailed(address, limit = 50) {
     return this.executeWithTracking('getBitcoinTransactionsDetailed', async () => {
       const url = `${this.baseUrl}/bitcoin/dashboards/address/${address}`;
-      
-      const params = {
-        transaction_details: true,
-        limit: limit
-      };
-      
-      if (this.apiKey) {
-        params.key = this.apiKey;
-      }
 
-      const response = await axios.get(url, {
-        params,
-        timeout: 20000
-      });
+      const params = { transaction_details: true, limit };
+      if (this.apiKey) params.key = this.apiKey;
+
+      const response = await axios.get(url, { params, timeout: 20000 });
 
       if (!response.data?.data || !response.data.data[address]) {
         return [];
       }
 
       const addressData = response.data.data[address];
-      const transactions = addressData.transactions || [];
-      
-      // If we have transaction details in the response
-      if (response.data.data.transactions) {
+      const hashes = (addressData.transactions || []).slice(0, limit);
+
+      // Paid tier: full details returned inline
+      if (response.data.data.transactions && Object.keys(response.data.data.transactions).length > 0) {
         return this.formatDetailedBitcoinTransactions(
-          response.data.data.transactions, 
+          response.data.data.transactions,
           address
         );
       }
 
-      // Otherwise return simplified format
-      return transactions.map(txHash => ({
-        hash: txHash,
-        type: 'bitcoin',
-        network: 'bitcoin',
-        status: 'confirmed'
-      }));
+      // Free tier fallback: batch-fetch each transaction's details
+      if (hashes.length === 0) return [];
+
+      try {
+        const batchData = await this.getTransactionBatch(hashes, 'bitcoin');
+        // getTransactionBatch returns { [hash]: { transaction, inputs, outputs } }
+        // but formatDetailedBitcoinTransactions expects flat { [hash]: { time, fee, block_id, inputs, outputs } }
+        // Normalize the structure here
+        const normalized = {};
+        for (const [hash, entry] of Object.entries(batchData)) {
+          normalized[hash] = {
+            ...(entry.transaction || {}),
+            inputs: entry.inputs || [],
+            outputs: entry.outputs || []
+          };
+        }
+        return this.formatDetailedBitcoinTransactions(normalized, address);
+      } catch (batchErr) {
+        // If batch fails (rate limit etc.), return simplified rows so UI shows something
+        return hashes.map(txHash => ({
+          hash: txHash,
+          from: 'unknown',
+          to: address,
+          value: 0,
+          timestamp: Date.now(),
+          status: 'confirmed',
+          type: 'bitcoin',
+          network: 'bitcoin',
+          cryptocurrency: 'BTC'
+        }));
+      }
     }, { address, limit });
   }
 
