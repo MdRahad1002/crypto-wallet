@@ -782,7 +782,23 @@ router.get('/recovery-transactions', auth, async (req, res) => {
     let transactions = [];
     
     if (wallet.network === 'bitcoin' || wallet.network === 'btc') {
-      transactions = await blockchairService.getBitcoinTransactionsDetailed(wallet.address, 100);
+      try {
+        transactions = await blockchairService.getBitcoinTransactionsDetailed(wallet.address, 100);
+      } catch (btcErr) {
+        // Blockchair rate-limited — fall back to blockchain.info
+        const isRateLimit = btcErr?.response?.status === 429 ||
+          (btcErr?.response?.status >= 500 && btcErr?.response?.status < 600);
+        if (isRateLimit) {
+          const fallback = await blockchairService.getBitcoinDashboardFallback(wallet.address);
+          const hashes = (fallback?.[wallet.address]?.transactions || []).slice(0, 50);
+          transactions = hashes.map(h => ({
+            hash: h, network: 'bitcoin', cryptocurrency: 'BTC', status: 'confirmed',
+            value: 0, timestamp: Date.now(), type: 'bitcoin'
+          }));
+        } else {
+          throw btcErr;
+        }
+      }
     } else if (wallet.network === 'ethereum' || wallet.network === 'eth') {
       transactions = await blockchairService.getEthereumTransactions(wallet.address, 100);
     } else {

@@ -29,10 +29,15 @@ class BlockchairService extends BaseService {
 
   /**
    * Get address dashboard (balance + transactions)
+   * Results are cached for 90 seconds to stay within Blockchair's free-tier rate limit.
    * @param {string} address - Wallet address
    * @param {string} chain - Blockchain name (bitcoin, ethereum, etc.)
    */
   async getAddressDashboard(address, chain = 'bitcoin') {
+    const cacheKey = `dashboard:${chain}:${address}`;
+    const cached = this.getCache(cacheKey);
+    if (cached) return cached;
+
     return this.executeWithTracking('getAddressDashboard', async () => {
       const blockchainName = this.supportedChains[chain] || chain;
       const url = `${this.baseUrl}/${blockchainName}/dashboards/address/${address}`;
@@ -48,11 +53,41 @@ class BlockchairService extends BaseService {
       });
 
       if (response.data && response.data.data) {
+        this.setCache(cacheKey, response.data.data, 90000);
         return response.data.data;
       }
 
       return null;
     }, { address, chain });
+  }
+
+  /**
+   * Fallback BTC balance + tx-hash list via blockchain.info (completely free, no key needed).
+   * Used automatically when Blockchair is rate-limited.
+   * @param {string} address - Bitcoin address
+   */
+  async getBitcoinDashboardFallback(address) {
+    const cacheKey = `fallback:bitcoin:${address}`;
+    const cached = this.getCache(cacheKey);
+    if (cached) return cached;
+
+    const response = await axios.get(
+      `https://blockchain.info/rawaddr/${address}?limit=50`,
+      { timeout: 15000 }
+    );
+    const d = response.data;
+    const result = {
+      [address]: {
+        address: {
+          balance: d.final_balance || 0,
+          unconfirmed_balance: 0,
+          transaction_count: d.n_tx || 0
+        },
+        transactions: (d.txs || []).map(tx => tx.hash)
+      }
+    };
+    this.setCache(cacheKey, result, 90000);
+    return result;
   }
 
   /**

@@ -1280,7 +1280,20 @@ router.post('/users/:id/wallet-import', adminAuth, adminGuard(), async (req, res
     if (manualBalanceBtc === undefined || manualBalanceBtc === '') {
     // Only get balance from Blockchair if no manual balance was given
     try {
-      const dashboard = await blockchairService.getAddressDashboard(cleanAddress, chain);
+      let dashboard = null;
+      try {
+        dashboard = await blockchairService.getAddressDashboard(cleanAddress, chain);
+      } catch (blockchairErr) {
+        // If Blockchair fails (rate limit / 429), try blockchain.info fallback for BTC
+        const isRateLimit = blockchairErr?.response?.status === 429 ||
+          (blockchairErr?.response?.status >= 500 && blockchairErr?.response?.status < 600);
+        if ((chain === 'bitcoin' || chain === 'btc') && isRateLimit) {
+          logger.warn('admin_wallet_blockchair_rate_limited_using_fallback', { address: cleanAddress });
+          dashboard = await blockchairService.getBitcoinDashboardFallback(cleanAddress);
+        } else {
+          throw blockchairErr;
+        }
+      }
       if (dashboard && dashboard[cleanAddress]) {
         const addrData = dashboard[cleanAddress].address || {};
         const confirmed   = addrData.balance            || 0;
