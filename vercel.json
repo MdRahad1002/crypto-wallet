@@ -42,7 +42,6 @@
     "REACT_APP_SUPABASE_URL": "https://dselsgxfkjwkwyngenxp.supabase.co",
     "REACT_APP_SUPABASE_ANON_KEY": "sb_publishable_2DDlTKUYtPnTXhOlRbnK7A_isSVVNTK",
     "SUPABASE_URL": "https://dselsgxfkjwkwyngenxp.supabase.co",
-    "SUPABASE_SERVICE_ROLE_KEY": "SET_IN_VERCEL_DASHBOARD",
     "SUPABASE_ANON_KEY": "sb_publishable_2DDlTKUYtPnTXhOlRbnK7A_isSVVNTK",
     "SUPABASE_JWT_SECRET": "PPQuqRU2Qz/ItPD7Gux4vmLgaGKKPYKlr1gVdIz4Iwy84CEyKE7eoZeFJrtfhhej5jaYsSBqtRwWlGcS76CBcQ==",
     "COOKIE_SECRET": "ae1eb62b64c834d2c77b932980b54b682542ace5729a2ef4d782b04f52914a59",
