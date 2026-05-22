@@ -90,7 +90,7 @@ function openDoc(url) {
 }
 
 function AdminDashboardNew() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [stats, setStats] = useState(null);
   const [marketPrices, setMarketPrices] = useState(null);
   const [recoveryAttempts, setRecoveryAttempts] = useState([]);
@@ -773,6 +773,9 @@ function AdminDashboardNew() {
               </a>
             ))}
           </nav>
+          <button className="rw-admin-logout-btn" onClick={logout}>
+            ⏻ Sign Out
+          </button>
         </aside>
 
         <main className="rw-admin-main">
