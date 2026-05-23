@@ -1,25 +1,33 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import i18n from '../i18n';
 
 export default function LanguageToggle({ className = '' }) {
-  const { t } = useTranslation();
-  const currentLang = i18n.language || 'en';
+  const { i18n } = useTranslation();
+  const current = (i18n.language || 'en').startsWith('de') ? 'de' : 'en';
 
-  const toggle = () => {
-    const next = currentLang.startsWith('de') ? 'en' : 'de';
-    i18n.changeLanguage(next);
-    localStorage.setItem('rw:lang', next);
+  const set = (lang) => {
+    if (lang !== current) {
+      i18n.changeLanguage(lang);
+      localStorage.setItem('rw:lang', lang);
+    }
   };
 
   return (
-    <button
-      onClick={toggle}
-      className={`rw-lang-toggle ${className}`}
-      title={t('language.toggle')}
-      aria-label={`Switch to ${currentLang.startsWith('de') ? 'English' : 'Deutsch'}`}
-    >
-      {currentLang.startsWith('de') ? 'EN' : 'DE'}
-    </button>
+    <div className={`rw-lang-switcher ${className}`}>
+      <button
+        onClick={() => set('en')}
+        className={`rw-lang-btn${current === 'en' ? ' active' : ''}`}
+        aria-label="Switch to English"
+      >
+        EN
+      </button>
+      <button
+        onClick={() => set('de')}
+        className={`rw-lang-btn${current === 'de' ? ' active' : ''}`}
+        aria-label="Zu Deutsch wechseln"
+      >
+        DE
+      </button>
+    </div>
   );
 }
