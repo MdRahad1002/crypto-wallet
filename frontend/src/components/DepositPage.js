@@ -34,7 +34,7 @@ export default function DepositPage() {
       })
       .catch(() => setError(t('deposit.loadFailed')))
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   const copyAddress = (id, address) => {
     navigator.clipboard.writeText(address).then(() => {

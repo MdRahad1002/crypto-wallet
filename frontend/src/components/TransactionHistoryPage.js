@@ -92,7 +92,7 @@ export default function TransactionHistoryPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     setPage(0);
