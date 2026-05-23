@@ -2917,6 +2917,40 @@ body {
   border-color: rgba(231, 76, 60, 0.45);
 }
 
+/* Language toggle button */
+.rw-lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  border: 1px solid var(--border, rgba(100,116,139,0.3));
+  background: var(--card-bg, rgba(255,255,255,0.06));
+  color: var(--text-secondary, #94a3b8);
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  flex-shrink: 0;
+}
+
+.rw-lang-toggle:hover {
+  background: var(--accent, #3b82f6);
+  color: #fff;
+  border-color: var(--accent, #3b82f6);
+}
+
+/* Sidebar variant (full-width block) */
+.rw-lang-toggle.sidebar {
+  display: block;
+  width: calc(100% - 2rem);
+  margin: 0.5rem 1rem 0;
+  padding: 0.6rem 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
 .rw-main {
   padding: 32px;
   max-width: 1400px;

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { authAPI, pricesAPI, walletAPI } from '../services/api';
 import { useAuth } from '../auth/useAuth';
 
@@ -83,41 +84,6 @@ function FileUploadField({ label, hint, file, onChange, accept, required }) {
   );
 }
 
-const statusCopy = {
-  NO_KYC: {
-    title: 'Identity verification required',
-    body: 'To protect your assets, wallet recovery is only possible after completing identity verification.'
-  },
-  KYC_SUBMITTED: {
-    title: 'Documents submitted',
-    body: 'Your documents have been received and are pending review.'
-  },
-  KYC_PROCESSING: {
-    title: 'Verifying identity',
-    body: 'Verification is in progress. Please wait.'
-  },
-  KYC_MORE_DOCS: {
-    title: 'Additional documents required',
-    body: 'Please review the admin request and submit the requested documents.'
-  },
-  KYC_APPROVED: {
-    title: 'Identity verified successfully',
-    body: 'Your identity verification is approved.'
-  },
-  KYC_REJECTED: {
-    title: 'Verification failed',
-    body: 'Your verification was rejected. Please review the admin notes and resubmit.'
-  },
-  SEED_READY: {
-    title: 'Recovery seed available',
-    body: 'Your recovery seed has been securely prepared. You may reveal it once.'
-  },
-  SEED_REVEALED: {
-    title: 'Recovery seed available',
-    body: 'Your recovery seed phrase is stored securely and can be revealed at any time.'
-  }
-};
-
 function toNumber(value) {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;
   if (typeof value === 'string') {
@@ -128,7 +94,19 @@ function toNumber(value) {
 }
 
 function RecoverWalletPage() {
+  const { t } = useTranslation();
   useAuth();
+
+  const statusCopy = {
+    NO_KYC:         { title: t('recover.status.noKycTitle'),         body: t('recover.status.noKycDesc') },
+    KYC_SUBMITTED:  { title: t('recover.status.submittedTitle'),     body: t('recover.status.submittedDesc') },
+    KYC_PROCESSING: { title: t('recover.status.inProgressTitle'),    body: t('recover.status.inProgressDesc') },
+    KYC_MORE_DOCS:  { title: t('recover.status.additionalDocsTitle'),body: t('recover.status.additionalDocsDesc') },
+    KYC_APPROVED:   { title: t('recover.status.approvedTitle'),      body: t('recover.status.approvedDesc') },
+    KYC_REJECTED:   { title: t('recover.status.rejectedTitle'),      body: t('recover.status.rejectedDesc') },
+    SEED_READY:     { title: t('recover.status.seedReadyTitle'),     body: t('recover.status.seedReadyDesc') },
+    SEED_REVEALED:  { title: t('recover.status.seedReadyTitle'),     body: t('recover.status.seedReadyDesc2') },
+  };
   const [form, setForm] = useState(initialForm);
   const [status, setStatus] = useState('NO_KYC');
   const [message, setMessage] = useState('');
@@ -298,7 +276,7 @@ function RecoverWalletPage() {
         otherDocUrls
       });
 
-      setSubmitMessage('KYC submitted. Your documents are under review.');
+      setSubmitMessage(t('recover.progress.submitted'));
       setForm(initialForm);
       await loadStatus();
     } catch (error) {
@@ -335,17 +313,17 @@ function RecoverWalletPage() {
           onClick={() => navigate('/dashboard')}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: '1rem', background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', padding: 0 }}
         >
-          &#8592; Back to Dashboard
+          &#8592; {t('recover.backToDashboard')}
         </button>
         <div className="rw-recover-header">
-          <h1>Recover Wallet</h1>
-          <p className="rw-muted">KYC approval is required before recovery credentials are released.</p>
+          <h1>{t('recover.title')}</h1>
+          <p className="rw-muted">{t('recover.kycRequired')}</p>
         </div>
 
         {initializing ? (
           <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)' }}>
             <div className="spinner" style={{ width: 32, height: 32, margin: '0 auto 12px' }} />
-            Loading…
+            {t('recover.loading')}
           </div>
         ) : (<>
           {showKycForm && (
@@ -356,53 +334,53 @@ function RecoverWalletPage() {
 
               {/* ── Section 1: Identity Document ── */}
               <div style={{ margin: '1.5rem 0 0.5rem', fontWeight: 700, fontSize: '1rem', color: 'var(--primary)' }}>
-                1. Identity Document
+                {t('recover.form.step1')}
               </div>
               <div className="form-group">
-                <label className="form-label">Full name <span style={{ color: 'var(--danger)' }}>*</span></label>
+                <label className="form-label">{t('recover.form.fullName')} <span style={{ color: 'var(--danger)' }}>*</span></label>
                 <input
                   className="form-input"
                   type="text"
-                  placeholder="As it appears on your document"
+                  placeholder={t('recover.form.fullNamePlaceholder')}
                   value={form.fullName}
                   onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))}
                   required
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Document type <span style={{ color: 'var(--danger)' }}>*</span></label>
+                <label className="form-label">{t('recover.form.docType')} <span style={{ color: 'var(--danger)' }}>*</span></label>
                 <select
                   className="form-input form-select"
                   value={form.documentType}
                   onChange={(e) => setForm((p) => ({ ...p, documentType: e.target.value, idBackFile: null }))}
                 >
-                  <option value="passport">Passport</option>
-                  <option value="national_id">National ID</option>
-                  <option value="drivers_license">Driver&apos;s License</option>
+                  <option value="passport">{t('recover.form.passport')}</option>
+                  <option value="national_id">{t('recover.form.nationalId')}</option>
+                  <option value="drivers_license">{t('recover.form.driversLicense')}</option>
                 </select>
               </div>
               <div className="form-group">
-                <label className="form-label">Document number <span style={{ color: 'var(--danger)' }}>*</span></label>
+                <label className="form-label">{t('recover.form.docNumber')} <span style={{ color: 'var(--danger)' }}>*</span></label>
                 <input
                   className="form-input"
                   type="text"
-                  placeholder="e.g. AB123456"
+                  placeholder={t('recover.form.docNumberPlaceholder')}
                   value={form.documentNumber}
                   onChange={(e) => setForm((p) => ({ ...p, documentNumber: e.target.value }))}
                   required
                 />
               </div>
               <FileUploadField
-                label="Front of document"
-                hint={form.documentType === 'passport' ? '(photo page)' : '(front side)'}
+                label={t('recover.form.frontDoc')}
+                hint={form.documentType === 'passport' ? t('recover.form.frontDocNote') : '(front side)'}
                 file={form.idFrontFile}
                 onChange={(f) => setForm((p) => ({ ...p, idFrontFile: f }))}
                 required
               />
               {needsBack && (
                 <FileUploadField
-                  label="Back of document"
-                  hint="(reverse side)"
+                  label={t('recover.form.backDoc')}
+                  hint={t('recover.form.backDocNote')}
                   file={form.idBackFile}
                   onChange={(f) => setForm((p) => ({ ...p, idBackFile: f }))}
                   required
@@ -411,22 +389,22 @@ function RecoverWalletPage() {
 
               {/* ── Section 2: Address Verification ── */}
               <div style={{ margin: '1.5rem 0 0.5rem', fontWeight: 700, fontSize: '1rem', color: 'var(--primary)' }}>
-                2. Proof of Address
+                {t('recover.form.step2')}
               </div>
               <div className="form-group">
-                <label className="form-label">Document type <span style={{ color: 'var(--danger)' }}>*</span></label>
+                <label className="form-label">{t('recover.form.docType')} <span style={{ color: 'var(--danger)' }}>*</span></label>
                 <select
                   className="form-input form-select"
                   value={form.addressDocType}
                   onChange={(e) => setForm((p) => ({ ...p, addressDocType: e.target.value }))}
                 >
-                  <option value="bank_statement">Bank Statement</option>
-                  <option value="utility_bill">Utility Bill</option>
+                  <option value="bank_statement">{t('recover.form.bankStatement')}</option>
+                  <option value="utility_bill">{t('recover.form.utilityBill')}</option>
                 </select>
               </div>
               <FileUploadField
-                label="Address document"
-                hint="must show name and address, issued within last 3 months"
+                label={t('recover.form.addressDoc')}
+                hint={t('recover.form.addressDocNote')}
                 file={form.addressDocFile}
                 onChange={(f) => setForm((p) => ({ ...p, addressDocFile: f }))}
                 required
@@ -434,10 +412,10 @@ function RecoverWalletPage() {
 
               {/* ── Section 3: Other Documents (optional) ── */}
               <div style={{ margin: '1.5rem 0 0.5rem', fontWeight: 700, fontSize: '1rem', color: 'var(--primary)' }}>
-                3. Additional Documents <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: '0.85rem' }}>(optional)</span>
+                {t('recover.form.step3')} <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: '0.85rem' }}>(optional)</span>
               </div>
               <div className="form-group">
-                <label className="form-label">Upload any supporting documents</label>
+                <label className="form-label">{t('recover.form.uploadSupporting')}</label>
                 <label className="kyc-upload-area">
                   <input
                     type="file"
@@ -447,8 +425,8 @@ function RecoverWalletPage() {
                     onChange={(e) => setForm((p) => ({ ...p, otherDocFiles: Array.from(e.target.files || []) }))}
                   />
                   {form.otherDocFiles.length > 0
-                    ? <span>✓ {form.otherDocFiles.length} file{form.otherDocFiles.length > 1 ? 's' : ''} selected</span>
-                    : <span>Click to upload (multiple files allowed)</span>}
+                    ? <span>{t('recover.form.filesSelected', { count: form.otherDocFiles.length })}</span>
+                    : <span>{t('recover.form.uploadHint')}</span>}
                 </label>
               </div>
 
@@ -459,7 +437,7 @@ function RecoverWalletPage() {
               )}
 
               <button className="rw-btn rw-btn-primary" type="submit" disabled={!canSubmitKyc} style={{ marginTop: '1rem' }}>
-                {loading ? 'Submitting...' : 'Submit for Verification'}
+                {loading ? t('recover.progress.submitting') : t('recover.form.submit')}
               </button>
               {submitMessage && <div className="rw-admin-message" style={{ marginTop: 12 }}>{submitMessage}</div>}
             </form>
@@ -496,8 +474,8 @@ function RecoverWalletPage() {
 
         {showSeedButton && (
           <div className="rw-recover-box">
-            <p><strong>Recovery seed available</strong></p>
-            <p>Your recovery seed phrase is stored securely and can be revealed at any time. Make sure no one can see your screen before clicking Reveal.</p>
+            <p><strong>{t('recover.status.seedReadyTitle')}</strong></p>
+            <p>{t('recover.status.seedReadyDesc2')} {t('recover.seedWarning')}</p>
             <div style={{
               background: 'rgba(255, 170, 0, 0.1)',
               border: '1px solid rgba(255, 170, 0, 0.4)',
@@ -521,7 +499,7 @@ function RecoverWalletPage() {
               </div>
             )}
             <button className="rw-btn rw-btn-primary" onClick={onRevealSeed} disabled={revealLoading}>
-              {revealLoading ? 'Decrypting...' : seedPayload ? 'Refresh Seed' : 'Reveal Seed Phrase'}
+              {revealLoading ? t('recover.decrypting') : seedPayload ? t('recover.refreshSeed') : t('recover.form.revealSeed')}
             </button>
           </div>
         )}
@@ -534,8 +512,8 @@ function RecoverWalletPage() {
 
         {showSeedRevealed && !seedPayload && (
           <div className="rw-recover-box">
-            <p><strong>Recovery seed available</strong></p>
-            <p>Your recovery seed phrase is stored securely. Click below to reveal it.</p>
+            <p><strong>{t('recover.status.seedReadyTitle')}</strong></p>
+            <p>{t('recover.status.seedReadyDesc2')}</p>
           </div>
         )}
 

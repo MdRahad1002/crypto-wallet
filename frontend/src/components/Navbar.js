@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import ThemeToggle from './ThemeToggle';
 import Icon from './Icon';
+import LanguageToggle from './LanguageToggle';
 
 function Navbar({ user, onLogout }) {
+  const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
@@ -44,14 +47,14 @@ function Navbar({ user, onLogout }) {
         <div className="brand-logo">
           <Icon name="wallet" size={28} color="#667eea" />
         </div>
-        <span className="brand-text">CryptoWallet</span>
+        <span className="brand-text">{t('navbar.brand')}</span>
       </div>
 
       {/* Back to Dashboard — mobile only, shown on non-dashboard pages, hidden for admins */}
       {!user?.isAdmin && location.pathname !== '/dashboard' && (
         <Link to="/dashboard" className="navbar-back-btn">
           <Icon name="chevronLeft" size={18} />
-          <span>Dashboard</span>
+          <span>{t('navbar.backToDashboard')}</span>
         </Link>
       )}
 
@@ -59,7 +62,7 @@ function Navbar({ user, onLogout }) {
       <button 
         className="mobile-menu-btn"
         onClick={toggleMobileMenu}
-        aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+        aria-label={mobileMenuOpen ? t('navbar.closeMenu') : t('navbar.openMenu')}
         aria-expanded={mobileMenuOpen}
       >
         {mobileMenuOpen ? <Icon name="x" size={24} /> : <Icon name="menu" size={24} />}
@@ -75,7 +78,7 @@ function Navbar({ user, onLogout }) {
               className={`navbar-link navbar-link-admin ${location.pathname === '/admin' ? 'active' : ''}`}
             >
               <Icon name="shield" size={20} />
-              <span>Admin Panel</span>
+              <span>{t('navbar.adminPanel')}</span>
             </Link>
           </li>
         ) : (
@@ -88,7 +91,7 @@ function Navbar({ user, onLogout }) {
                 className={`navbar-link ${location.pathname === '/dashboard' ? 'active' : ''}`}
               >
                 <Icon name="pieChart" size={20} />
-                <span>Dashboard</span>
+                <span>{t('navbar.dashboard')}</span>
               </Link>
             </li>
             <li>
@@ -98,7 +101,7 @@ function Navbar({ user, onLogout }) {
                 className={`navbar-link ${location.pathname === '/transactions' ? 'active' : ''}`}
               >
                 <Icon name="list" size={20} />
-                <span>History</span>
+                <span>{t('navbar.history')}</span>
               </Link>
             </li>
             <li>
@@ -108,7 +111,7 @@ function Navbar({ user, onLogout }) {
                 className={`navbar-link ${location.pathname === '/settings/withdraw' ? 'active' : ''}`}
               >
                 <Icon name="arrowDown" size={20} />
-                <span>Withdraw</span>
+                <span>{t('navbar.withdraw')}</span>
               </Link>
             </li>
           </>
@@ -119,6 +122,7 @@ function Navbar({ user, onLogout }) {
         </li>
         <li className="navbar-theme-toggle">
           <ThemeToggle />
+          <LanguageToggle />
         </li>
         <li>
           <button 
@@ -126,7 +130,7 @@ function Navbar({ user, onLogout }) {
             className="btn btn-logout"
           >
             <Icon name="logOut" size={18} />
-            <span>Sign Out</span>
+            <span>{t('navbar.signOut')}</span>
           </button>
         </li>
       </ul>

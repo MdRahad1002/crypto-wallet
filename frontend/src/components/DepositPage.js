@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { transactionAPI } from '../services/api';
 import Icon from './Icon';
 
@@ -17,6 +18,7 @@ const NETWORK_COLORS = {
 };
 
 export default function DepositPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading]     = useState(true);
@@ -30,7 +32,7 @@ export default function DepositPage() {
         setAddresses(res.data?.addresses || []);
         // needsSetup means table not yet created — not an error, just empty
       })
-      .catch(() => setError('Failed to load deposit addresses. Please try again later.'))
+      .catch(() => setError(t('deposit.loadFailed')))
       .finally(() => setLoading(false));
   }, []);
 
@@ -65,7 +67,7 @@ export default function DepositPage() {
             fontSize: '0.9rem', padding: 0,
           }}
         >
-          &#8592; Back to Dashboard
+          &#8592; {t('deposit.backToDashboard')}
         </button>
 
         {/* Header */}
@@ -75,9 +77,9 @@ export default function DepositPage() {
               <Icon name="arrowDown" size={30} color="#34c759" />
             </div>
           </div>
-          <h1>Deposit / Receive</h1>
+          <h1>{t('deposit.title')}</h1>
           <p className="rw-muted">
-            Send crypto to the addresses below. Your balance will be updated once confirmed by the network.
+            {t('deposit.subtitle')}
           </p>
         </div>
 
@@ -105,12 +107,12 @@ export default function DepositPage() {
         {!loading && !error && addresses.length === 0 && (
           <div className="rw-recover-box" style={{ textAlign: 'center', padding: '2.5rem' }}>
             <Icon name="alertCircle" size={48} color="var(--warning)" />
-            <h3 style={{ marginTop: '1rem', color: 'var(--text-primary)' }}>No Deposit Addresses Yet</h3>
+            <h3 style={{ marginTop: '1rem', color: 'var(--text-primary)' }}>{t('deposit.noAddresses')}</h3>
             <p style={{ color: 'var(--text-secondary)', marginTop: 6, fontSize: '0.9rem' }}>
-              Deposit addresses haven&apos;t been configured yet. Please contact support.
+              {t('deposit.noAddressesHint')}
             </p>
             <button className="rw-btn rw-btn-secondary" onClick={() => navigate('/dashboard')} style={{ marginTop: '1.25rem' }}>
-              Back to Dashboard
+              {t('deposit.backToDashboardBtn')}
             </button>
           </div>
         )}
@@ -129,16 +131,16 @@ export default function DepositPage() {
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
                     {item.cryptocurrency}
-                    <span style={{ fontWeight: 500, fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: 8, textTransform: 'capitalize' }}>
-                      {item.network} network
+                      <span style={{ fontWeight: 500, fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: 8, textTransform: 'capitalize' }}>
+                      {t('deposit.network', { symbol: item.network })}
                     </span>
                   </div>
                   {item.label && (
                     <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 2 }}>{item.label}</div>
                   )}
                 </div>
-                <span style={{ padding: '3px 12px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: 'rgba(52,199,89,0.12)', color: '#34c759', border: '1px solid rgba(52,199,89,0.25)' }}>
-                  Active
+                  <span style={{ padding: '3px 12px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: 'rgba(52,199,89,0.12)', color: '#34c759', border: '1px solid rgba(52,199,89,0.25)' }}>
+                  {t('deposit.active')}
                 </span>
               </div>
 
@@ -150,7 +152,7 @@ export default function DepositPage() {
                   {qrErrors[item.id] ? (
                     <div style={{ width: 160, height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8, color: '#999' }}>
                       <Icon name="qrCode" size={40} color="#ccc" />
-                      <span style={{ fontSize: '0.72rem', textAlign: 'center', color: '#aaa' }}>QR unavailable</span>
+                      <span style={{ fontSize: '0.72rem', textAlign: 'center', color: '#aaa' }}>{t('deposit.qrUnavailable')}</span>
                     </div>
                   ) : (
                     <img
@@ -167,7 +169,7 @@ export default function DepositPage() {
                 {/* Address + copy */}
                 <div style={{ flex: 1, minWidth: 200 }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                    Deposit Address
+                    {t('deposit.depositAddress')}
                   </div>
                   <div style={{
                     fontFamily: 'monospace', fontSize: '0.85rem', color: '#1a1a1a',
@@ -183,9 +185,9 @@ export default function DepositPage() {
                     style={{ width: '100%', transition: 'all 0.2s' }}
                   >
                     {copied[item.id] ? (
-                      <><span>✓</span> Copied!</>
+                      <>{t('deposit.copied')}</>
                     ) : (
-                      <>&#128203; Copy Address</>
+                      <>{t('deposit.copyAddress')}</>
                     )}
                   </button>
                 </div>

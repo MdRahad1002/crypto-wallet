@@ -10,7 +10,9 @@ import BatchTransactions from './BatchTransactions';
 import TokenManagement from './TokenManagement';
 import useUsdPricesSocket from '../hooks/useUsdPricesSocket';
 import { useAuth } from '../auth/useAuth';
+import { useTranslation } from 'react-i18next';
 import Icon from './Icon';
+import LanguageToggle from './LanguageToggle';
 
 const formatUsd = (value) => {
   if (typeof value !== 'number' || Number.isNaN(value)) {
@@ -33,6 +35,7 @@ const toNumber = (value) => {
 };
 
 function Dashboard() {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [balances, setBalances] = useState([]);
@@ -245,44 +248,23 @@ function Dashboard() {
   const recoveryBanner = useMemo(() => {
     switch (recoveryInfo.status) {
       case 'NO_KYC':
-        return {
-          type: 'warning',
-          text: 'Complete identity verification to start recovery.'
-        };
+        return { type: 'warning', text: t('dashboard.recovery.noKyc') };
       case 'KYC_SUBMITTED':
-        return {
-          type: 'info',
-          text: 'Documents submitted — pending review.'
-        };
+        return { type: 'info', text: t('dashboard.recovery.submitted') };
       case 'KYC_PROCESSING':
-        return {
-          type: 'info',
-          text: 'Verification in progress. Please wait.'
-        };
+        return { type: 'info', text: t('dashboard.recovery.inProgress') };
       case 'KYC_MORE_DOCS':
-        return {
-          type: 'warning',
-          text: recoveryInfo.message || 'Additional documents required by admin.'
-        };
+        return { type: 'warning', text: recoveryInfo.message || t('dashboard.recovery.additionalDocs') };
       case 'KYC_APPROVED':
-        return {
-          type: 'success',
-          text: 'KYC approved. Admin will provision your recovery seed.'
-        };
+        return { type: 'success', text: t('dashboard.recovery.approved') };
       case 'SEED_READY':
-        return {
-          type: 'success',
-          text: 'Recovery seed is ready. Visit Recover Wallet to reveal it once.'
-        };
+        return { type: 'success', text: t('dashboard.recovery.seedReady') };
       case 'SEED_REVEALED':
-        return {
-          type: 'info',
-          text: 'Seed already revealed. Store it securely.'
-        };
+        return { type: 'info', text: t('dashboard.recovery.revealed') };
       default:
         return null;
     }
-  }, [recoveryInfo.message, recoveryInfo.status]);
+  }, [recoveryInfo.message, recoveryInfo.status, t]);
 
   useEffect(() => {
     if (!prices || balances.length === 0) {
@@ -345,10 +327,10 @@ function Dashboard() {
 
   const topMetrics = useMemo(() => {
     const metrics = [
-      { label: 'Total Portfolio Value', value: prices && balances.length > 0 ? formatUsd(totalBalance) : '—' },
-      { label: 'Bitcoin (BTC)', value: formatUsd(priceMap.BTC) },
-      { label: 'Ethereum (ETH)', value: formatUsd(priceMap.ETH) },
-      { label: 'USDT', value: formatUsd(priceMap.USDT) }
+      { label: t('dashboard.metrics.totalPortfolio'), value: prices && balances.length > 0 ? formatUsd(totalBalance) : '—' },
+      { label: t('dashboard.metrics.bitcoin'), value: formatUsd(priceMap.BTC) },
+      { label: t('dashboard.metrics.ethereum'), value: formatUsd(priceMap.ETH) },
+      { label: t('dashboard.metrics.usdt'), value: formatUsd(priceMap.USDT) }
     ];
 
     if (recoveryWalletBalance) {
@@ -359,13 +341,13 @@ function Dashboard() {
         ? formatUsd(recoveryWalletBalance.usd)
         : null;
       metrics.push({
-        label: 'Recovery Wallet (Frozen)',
+        label: t('dashboard.metrics.recoveryWallet'),
         value: frozenUsd ? `${frozenValue} (${frozenUsd})` : frozenValue
       });
     }
 
     return metrics;
-  }, [balances.length, priceMap.BTC, priceMap.ETH, priceMap.USDT, prices, totalBalance, recoveryWalletBalance]);
+  }, [balances.length, priceMap.BTC, priceMap.ETH, priceMap.USDT, prices, totalBalance, recoveryWalletBalance, t]);
 
   const portfolioRows = useMemo(() => {
     // Aggregate wallets by symbol — combine all BTC wallets into one row, etc.
@@ -399,7 +381,7 @@ function Dashboard() {
       <div className="rw-theme rw-page">
         <div className="loading">
           <div className="spinner"></div>
-          <p className="loading-text">Loading your portfolio...</p>
+          <p className="loading-text">{t('dashboard.loading')}</p>
         </div>
       </div>
     );
@@ -428,18 +410,18 @@ function Dashboard() {
             <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-secondary)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Security</span>
           </div>
           <nav className="rw-nav">
-            <a href="#dashboard" className="rw-nav-link active" onClick={closeMobileMenu}>Dashboard</a>
-            <Link to="/transactions" className="rw-nav-link" onClick={closeMobileMenu}>Transaction History</Link>
-            <a href="#portfolio" className="rw-nav-link" onClick={closeMobileMenu}>Portfolio</a>
-            <a href="#charts" className="rw-nav-link" onClick={closeMobileMenu}>Price Charts</a>
-            <Link to="/settings/withdraw" className="rw-nav-link" onClick={closeMobileMenu}>Withdraw</Link>
+            <a href="#dashboard" className="rw-nav-link active" onClick={closeMobileMenu}>{t('dashboard.nav.dashboard')}</a>
+            <Link to="/transactions" className="rw-nav-link" onClick={closeMobileMenu}>{t('dashboard.nav.transactions')}</Link>
+            <a href="#portfolio" className="rw-nav-link" onClick={closeMobileMenu}>{t('dashboard.nav.portfolio')}</a>
+            <a href="#charts" className="rw-nav-link" onClick={closeMobileMenu}>{t('dashboard.nav.priceCharts')}</a>
+            <Link to="/settings/withdraw" className="rw-nav-link" onClick={closeMobileMenu}>{t('dashboard.nav.withdraw')}</Link>
             <button type="button" className="rw-nav-link" onClick={() => { handleRecover(); closeMobileMenu(); }}>
-              Recover Wallet
+              {t('dashboard.nav.recoverWallet')}
             </button>
-            <a href="#security" className="rw-nav-link" onClick={closeMobileMenu}>Security</a>
-            <Link to="/support" className="rw-nav-link" onClick={closeMobileMenu}>Support</Link>
+            <a href="#security" className="rw-nav-link" onClick={closeMobileMenu}>{t('dashboard.nav.security')}</a>
+            <Link to="/support" className="rw-nav-link" onClick={closeMobileMenu}>{t('dashboard.nav.support')}</Link>
             {isAdmin && (
-              <Link to="/admin" className="rw-nav-link" onClick={closeMobileMenu}>Admin</Link>
+              <Link to="/admin" className="rw-nav-link" onClick={closeMobileMenu}>{t('dashboard.nav.admin')}</Link>
             )}
             <button 
               type="button" 
@@ -454,19 +436,20 @@ function Dashboard() {
               }}
             >
               <Icon name="logOut" size={18} style={{ marginRight: '0.5rem' }} />
-              Sign Out
+              {t('navbar.signOut')}
             </button>
+            <LanguageToggle className="sidebar" />
           </nav>
         </aside>
 
         <main className="rw-main">
           <div className="rw-header" id="dashboard">
             <div>
-              <h1>Welcome, {userName}</h1>
+              <h1>{t('dashboard.welcomeTitle', { name: userName })}</h1>
               <p className="rw-muted">Clean recovery-first wallet overview</p>
             </div>
             <div className="rw-user-box">
-              Logged in as <b>{userName}</b> <span className="rw-muted">({userEmail})</span>
+              {t('dashboard.loggedInAs', { name: userName, email: userEmail })}
             </div>
           </div>
 
@@ -494,7 +477,7 @@ function Dashboard() {
               <div className={`rw-alert rw-alert-${bannerOverride?.bannerType || recoveryBanner?.type} rw-alert-row`}>
                 <span>{bannerOverride?.text || recoveryBanner?.text}</span>
                 <button className="rw-btn rw-btn-secondary" onClick={bannerOverride ? handleBannerBtn : handleRecover}>
-                  {bannerOverride ? btnLabel : 'Go to Recovery'}
+                  {bannerOverride ? btnLabel : t('dashboard.recovery.goToRecovery')}
                 </button>
               </div>
             );
@@ -504,7 +487,7 @@ function Dashboard() {
           {notifications.length > 0 && (
             <section className="rw-notifications-section">
               <div className="rw-notifications-header">
-                <h3><Icon name="bell" size={20} /> Notifications {unreadCount > 0 && <span className="rw-unread-badge">{unreadCount}</span>}</h3>
+                <h3><Icon name="bell" size={20} /> {t('dashboard.notifications.title')} {unreadCount > 0 && <span className="rw-unread-badge">{unreadCount}</span>}</h3>
               </div>
               <div className="rw-notifications-list">
                 {notifications.map((notification) => {
@@ -558,7 +541,7 @@ function Dashboard() {
                               style={{ alignSelf: 'flex-start', padding: '4px 14px', fontSize: '0.82rem', marginTop: 2 }}
                               onClick={() => navigate('/recover-wallet')}
                             >
-                              Reveal Recovery Seed →
+                              {t('dashboard.recovery.revealSeed')}
                             </button>
                           )}
                         </div>
@@ -599,15 +582,15 @@ function Dashboard() {
 
           <section className="rw-card rw-section" id="portfolio" ref={portfolioRef}>
             <div className="rw-section-header">
-              <h3>Your Assets</h3>
-              <span className="rw-muted">Top holdings</span>
+              <h3>{t('dashboard.assets.title')}</h3>
+              <span className="rw-muted">{t('dashboard.assets.subtitle')}</span>
             </div>
 
             {portfolioRows.length === 0 ? (
               <div className="rw-empty">
-                <p>No assets found yet.</p>
+                <p>{t('dashboard.assets.noAssets')}</p>
                 <button className="rw-btn rw-btn-primary" onClick={() => setShowCreateWallet(true)}>
-                  Create Wallet
+                  {t('dashboard.assets.createWallet')}
                 </button>
               </div>
             ) : (
@@ -624,10 +607,10 @@ function Dashboard() {
 
             <div className="rw-actions">
               <button className="rw-btn rw-btn-primary" onClick={handleRecover}>
-                Recover Wallet
+                {t('dashboard.assets.recoverWallet')}
               </button>
               <button className="rw-btn rw-btn-secondary" onClick={handleViewDetails}>
-                View Details
+                {t('dashboard.assets.viewDetails')}
               </button>
             </div>
           </section>
@@ -665,9 +648,9 @@ function Dashboard() {
           {recoveryTransactions.length > 0 && (
             <section className="rw-card rw-section" id="recovery-transactions">
               <div className="rw-section-header">
-                <h3>Recovery Wallet Transactions</h3>
+                <h3>{t('dashboard.recovery.transactions')}</h3>
                 <span className="rw-muted">
-                  {loadingTransactions ? 'Loading...' : `${recoveryTransactions.length} transaction(s)`}
+                  {loadingTransactions ? t('dashboard.loading') : t('dashboard.txCount', { count: recoveryTransactions.length })}
                 </span>
               </div>
               
@@ -686,7 +669,7 @@ function Dashboard() {
                       </div>
                       <div className="rw-transaction-details">
                         <div className="rw-transaction-type">
-                          {tx.direction === 'received' ? 'Received' : tx.direction === 'sent' ? 'Sent' : 'Transfer'}
+                          {tx.direction === 'received' ? t('transactions.received') : tx.direction === 'sent' ? t('transactions.sent') : t('transactions.deposit')}
                         </div>
                         <div className="rw-transaction-date">{date} {time}</div>
                         <div className="rw-transaction-hash">
@@ -726,17 +709,17 @@ function Dashboard() {
 
           <section className="rw-grid rw-section" id="recovery">
             <div className="rw-card">
-              <h3>Recovery & Actions</h3>
-              <p className="rw-muted">Restore, monitor, or send with confidence.</p>
+              <h3>{t('dashboard.actions.title')}</h3>
+              <p className="rw-muted">{t('dashboard.actions.subtitle')}</p>
               <div className="rw-actions rw-actions-wrap">
                 <button className="rw-btn rw-btn-primary" onClick={handleRecover}>
-                  Recover
+                  {t('dashboard.actions.recover')}
                 </button>
                 <button className="rw-btn rw-btn-secondary" onClick={() => setShowCreateWallet(true)}>
-                  Create Wallet
+                  {t('dashboard.actions.createWallet')}
                 </button>
                 <button className="rw-btn rw-btn-secondary" onClick={() => setShowWatchOnly(true)}>
-                  Watch-Only
+                  {t('dashboard.actions.watchOnly')}
                 </button>
                 <button
                   className="rw-btn rw-btn-secondary"
@@ -748,53 +731,53 @@ function Dashboard() {
                   }}
                   disabled={wallets.length === 0}
                 >
-                  Tokens
+                  {t('dashboard.actions.tokens')}
                 </button>
                 <button
                   className="rw-btn rw-btn-secondary"
                   onClick={() => setShowBatchTransactions(true)}
                   disabled={wallets.length === 0}
                 >
-                  Batch
+                  {t('dashboard.actions.batch')}
                 </button>
                 <button
                   className="rw-btn rw-btn-secondary"
                   onClick={() => navigate('/deposit')}
                 >
-                  Deposit
+                  {t('dashboard.actions.deposit')}
                 </button>
                 <button
                   className="rw-btn rw-btn-secondary"
                   onClick={() => setShowQRScanner(true)}
                 >
-                  Scan QR
+                  {t('dashboard.actions.scanQr')}
                 </button>
                 <button
                   className="rw-btn rw-btn-primary"
                   onClick={() => setShowSendModal(true)}
                   disabled={wallets.length === 0}
                 >
-                  Send
+                  {t('dashboard.actions.send')}
                 </button>
               </div>
             </div>
             <div className="rw-card" id="security">
-              <h3>Security Status</h3>
-              <p className="rw-muted">Multi-layer protection with audit logging.</p>
+              <h3>{t('dashboard.security.title')}</h3>
+              <p className="rw-muted">{t('dashboard.security.subtitle')}</p>
               <div className="rw-status">
                 <span className="rw-status-dot"></span>
-                Operational & secure
+                {t('dashboard.security.status')}
               </div>              <button
                 className="rw-btn rw-btn-secondary"
                 style={{ marginTop: '0.75rem' }}
                 onClick={() => navigate('/change-password')}
               >
-                Change Password
+                {t('dashboard.security.changePassword')}
               </button>            </div>
             <div className="rw-card" id="support">
-              <h3>Support</h3>
-              <p className="rw-muted">24/7 recovery assistance for critical cases.</p>
-              <button className="rw-btn rw-btn-primary" onClick={() => navigate('/support')}>Contact Support</button>
+              <h3>{t('dashboard.support.title')}</h3>
+              <p className="rw-muted">{t('dashboard.support.subtitle')}</p>
+              <button className="rw-btn rw-btn-primary" onClick={() => navigate('/support')}>{t('dashboard.support.contactSupport')}</button>
             </div>
           </section>
 

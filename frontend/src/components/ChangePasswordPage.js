@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { authAPI } from '../services/api';
 import Icon from './Icon';
 
 const rules = [
-  { label: 'At least 8 characters',          test: (p) => p.length >= 8 },
-  { label: 'One uppercase letter (A-Z)',      test: (p) => /[A-Z]/.test(p) },
-  { label: 'One lowercase letter (a-z)',      test: (p) => /[a-z]/.test(p) },
-  { label: 'One number (0-9)',                test: (p) => /\d/.test(p) },
-  { label: 'One special character (!@#$%^&*)', test: (p) => /[!@#$%^&*]/.test(p) },
+  { key: 'length',    test: (p) => p.length >= 8 },
+  { key: 'uppercase', test: (p) => /[A-Z]/.test(p) },
+  { key: 'lowercase', test: (p) => /[a-z]/.test(p) },
+  { key: 'number',    test: (p) => /\d/.test(p) },
+  { key: 'special',   test: (p) => /[!@#$%^&*]/.test(p) },
 ];
 
 function ChangePasswordPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [showCurrent, setShowCurrent] = useState(false);
@@ -27,8 +29,10 @@ function ChangePasswordPage() {
     return rules.filter((r) => r.test(form.newPassword)).length;
   })();
 
-  const strengthLabel = ['', 'Very Weak', 'Weak', 'Fair', 'Good', 'Strong'][strength];
-  const strengthColor = ['', '#ff4444', '#ff8800', '#ffc107', '#4caf50', '#00e676'][strength];
+  const strengthLabels = ['', t('changePassword.strength.veryWeak'), t('changePassword.strength.weak'), t('changePassword.strength.fair'), t('changePassword.strength.good'), t('changePassword.strength.strong')];
+  const strengthColors = ['', '#ff4444', '#ff8800', '#ffc107', '#4caf50', '#00e676'];
+  const strengthLabel = strengthLabels[strength];
+  const strengthColor = strengthColors[strength];
 
   const canSubmit =
     !loading &&
@@ -41,11 +45,11 @@ function ChangePasswordPage() {
     e.preventDefault();
     setMessage(null);
     if (form.newPassword !== form.confirmPassword) {
-      setMessage({ text: 'New passwords do not match.', ok: false });
+      setMessage({ text: t('changePassword.errors.noMatch'), ok: false });
       return;
     }
     if (form.newPassword === form.currentPassword) {
-      setMessage({ text: 'New password must be different from your current password.', ok: false });
+      setMessage({ text: t('changePassword.errors.samePassword'), ok: false });
       return;
     }
     setLoading(true);
@@ -54,11 +58,11 @@ function ChangePasswordPage() {
         currentPassword: form.currentPassword,
         newPassword: form.newPassword
       });
-      setMessage({ text: res.data.message || 'Password changed. Signing you out…', ok: true });
+      setMessage({ text: res.data.message || t('changePassword.successSignOut'), ok: true });
       // Sessions revoked — redirect to login after 2 s
       setTimeout(() => navigate('/login', { replace: true }), 2000);
     } catch (err) {
-      setMessage({ text: err.response?.data?.message || 'Failed to change password.', ok: false });
+      setMessage({ text: err.response?.data?.message || t('changePassword.errors.failed'), ok: false });
     } finally {
       setLoading(false);
     }
@@ -71,23 +75,23 @@ function ChangePasswordPage() {
           onClick={() => navigate('/dashboard')}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: '1rem', background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', padding: 0 }}
         >
-          &#8592; Back to Dashboard
+          &#8592; {t('changePassword.backToDashboard')}
         </button>
         <div className="rw-recover-header">
-          <h1>Change Password</h1>
-          <p className="rw-muted">Enter your current password and choose a new one.</p>
+          <h1>{t('changePassword.title')}</h1>
+          <p className="rw-muted">{t('changePassword.subtitle')}</p>
         </div>
 
         <div className="rw-recover-box">
           <form onSubmit={handleSubmit}>
             {/* Current password */}
             <div className="form-group">
-              <label className="form-label">Current Password</label>
+              <label className="form-label">{t('changePassword.currentPassword')}</label>
               <div style={{ position: 'relative' }}>
                 <input
                   className="form-input"
                   type={showCurrent ? 'text' : 'password'}
-                  placeholder="Your current password"
+                  placeholder={t('changePassword.currentPlaceholder')}
                   value={form.currentPassword}
                   onChange={(e) => setForm((f) => ({ ...f, currentPassword: e.target.value }))}
                   required
@@ -106,12 +110,12 @@ function ChangePasswordPage() {
 
             {/* New password */}
             <div className="form-group">
-              <label className="form-label">New Password</label>
+              <label className="form-label">{t('changePassword.newPassword')}</label>
               <div style={{ position: 'relative' }}>
                 <input
                   className="form-input"
                   type={showNew ? 'text' : 'password'}
-                  placeholder="New strong password"
+                  placeholder={t('changePassword.newPlaceholder')}
                   value={form.newPassword}
                   onChange={(e) => setForm((f) => ({ ...f, newPassword: e.target.value }))}
                   required
@@ -147,12 +151,12 @@ function ChangePasswordPage() {
 
             {/* Confirm new password */}
             <div className="form-group">
-              <label className="form-label">Confirm New Password</label>
+              <label className="form-label">{t('changePassword.confirmPassword')}</label>
               <div style={{ position: 'relative' }}>
                 <input
                   className="form-input"
                   type={showConfirm ? 'text' : 'password'}
-                  placeholder="Repeat new password"
+                  placeholder={t('changePassword.confirmPlaceholder')}
                   value={form.confirmPassword}
                   onChange={(e) => setForm((f) => ({ ...f, confirmPassword: e.target.value }))}
                   required
@@ -173,23 +177,23 @@ function ChangePasswordPage() {
                 </button>
               </div>
               {form.confirmPassword && form.confirmPassword !== form.newPassword && (
-                <span style={{ fontSize: '0.8rem', color: 'var(--danger)', marginTop: 4, display: 'block' }}>Passwords do not match</span>
+                <span style={{ fontSize: '0.8rem', color: 'var(--danger)', marginTop: 4, display: 'block' }}>{t('changePassword.noMatch')}</span>
               )}
             </div>
 
             {/* Password requirements */}
             <div style={{ marginBottom: '1rem', padding: '10px 14px', background: 'rgba(74,158,255,0.07)', borderRadius: 10, fontSize: '0.83rem' }}>
-              <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--text-muted)' }}>Password requirements:</div>
+              <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--text-muted)' }}>{t('changePassword.requirements')}</div>
               {rules.map((r) => {
                 const passed = form.newPassword ? r.test(form.newPassword) : false;
                 return (
-                  <div key={r.label} style={{ marginBottom: 3, display: 'flex', alignItems: 'center', gap: 6,
+                  <div key={r.key} style={{ marginBottom: 3, display: 'flex', alignItems: 'center', gap: 6,
                     color: form.newPassword ? (passed ? 'var(--success, #22c55e)' : 'var(--danger, #ef4444)') : 'var(--text-muted)'
                   }}>
                     <span style={{ fontSize: '0.9rem', width: 16, textAlign: 'center' }}>
                       {form.newPassword ? (passed ? '✓' : '✗') : '•'}
                     </span>
-                    {r.label}
+                    {t('changePassword.req.' + r.key)}
                   </div>
                 );
               })}
@@ -209,7 +213,7 @@ function ChangePasswordPage() {
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="rw-btn rw-btn-primary" type="submit" disabled={!canSubmit} style={{ flex: 1 }}>
-                {loading ? 'Changing…' : 'Change Password'}
+                {loading ? t('changePassword.updating') : t('changePassword.updateBtn')}
               </button>
               <button
                 type="button"

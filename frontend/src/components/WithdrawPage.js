@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { walletAPI, transactionAPI } from '../services/api';
 import Icon from './Icon';
 
@@ -14,6 +15,7 @@ function cleanLabel(label) {
 }
 
 function WithdrawPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [wallets, setWallets] = useState([]);
@@ -86,9 +88,9 @@ function WithdrawPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!form.toAddress.trim()) return setError('Recipient address is required.');
-    if (!form.amount || parseFloat(form.amount) <= 0) return setError('Enter a valid amount.');
-    if (exceedsBalance) return setError(`Amount exceeds your available balance of ${availableBalance} ${form.cryptocurrency}.`);
+    if (!form.toAddress.trim()) return setError(t('withdraw.errors.addressRequired'));
+    if (!form.amount || parseFloat(form.amount) <= 0) return setError(t('withdraw.errors.invalidAmount'));
+    if (exceedsBalance) return setError(t('withdraw.errors.exceedsBalance', { amount: availableBalance, symbol: form.cryptocurrency }));
     setLoading(true);
     try {
       const res = await transactionAPI.withdraw({
@@ -101,7 +103,7 @@ function WithdrawPage() {
       });
       setSuccess(res.data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to submit withdrawal. Please try again.');
+      setError(err.response?.data?.message || t('withdraw.errors.submitFailed'));
     } finally {
       setLoading(false);
     }
@@ -124,36 +126,36 @@ function WithdrawPage() {
               <Icon name="clock" size={48} color="#ff9f0a" />
             </div>
             <h2 style={{ color: 'var(--text-primary)', marginBottom: '0.75rem', fontSize: '1.75rem', fontWeight: 800 }}>
-              Request Submitted
+              {t('withdraw.success.title')}
             </h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-              Your withdrawal request is <strong>pending admin approval</strong>.
+              {t('withdraw.success.message')}
             </p>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-              You'll receive a notification once it's approved or rejected. Check your Transaction History to track its status.
+              {t('withdraw.success.detail')}
             </p>
             <div style={{
               padding: '1rem 1.25rem', background: 'var(--dark-bg)', borderRadius: 14,
               border: '1px solid var(--border-color)', fontSize: '0.875rem',
               color: 'var(--text-secondary)', marginBottom: '1.5rem', textAlign: 'left',
             }}>
-              <div style={{ fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>Request Details</div>
-              <div>Amount: <strong>{success.transaction?.amount} {success.transaction?.cryptocurrency}</strong></div>
+              <div style={{ fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>{t('withdraw.success.requestDetails')}</div>
+              <div>{t('withdraw.success.amount', { amount: success.transaction?.amount, symbol: success.transaction?.cryptocurrency })}</div>
               <div style={{ marginTop: 4, fontFamily: 'monospace', wordBreak: 'break-all' }}>
-                To: {success.transaction?.toAddress}
+                {t('withdraw.success.to', { address: success.transaction?.toAddress })}
               </div>
-              <div style={{ marginTop: 4 }}>Status: <span style={{ color: '#ff9f0a', fontWeight: 600 }}>⏳ Pending</span></div>
+              <div style={{ marginTop: 4 }}>{t('withdraw.success.status')}</div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <button className="rw-btn rw-btn-primary" onClick={() => navigate('/transactions')} style={{ width: '100%' }}>
-                View Transaction History
+                {t('withdraw.success.viewHistory')}
               </button>
               <div style={{ display: 'flex', gap: 10 }}>
                 <button className="rw-btn rw-btn-secondary" onClick={() => navigate('/dashboard')} style={{ flex: 1 }}>
-                  Back to Dashboard
+                  {t('withdraw.success.backToDashboard')}
                 </button>
                 <button className="rw-btn rw-btn-secondary" onClick={() => { setSuccess(null); setForm((f) => ({ ...f, toAddress: '', amount: '', description: '' })); }} style={{ flex: 1 }}>
-                  New Request
+                  {t('withdraw.success.newRequest')}
                 </button>
               </div>
             </div>
@@ -173,7 +175,7 @@ function WithdrawPage() {
           onClick={() => navigate('/dashboard')}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: '1rem', background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', padding: 0 }}
         >
-          &#8592; Back to Dashboard
+          &#8592; {t('withdraw.backToDashboard')}
         </button>
 
         {/* Header */}
@@ -183,20 +185,20 @@ function WithdrawPage() {
               <Icon name="arrowDown" size={28} color="#ff453a" />
             </div>
           </div>
-          <h1>Withdraw Funds</h1>
+          <h1>{t('withdraw.title')}</h1>
         </div>
 
         <div className="rw-recover-box">
           {walletsLoading ? (
             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
               <div className="spinner" style={{ margin: '0 auto 1rem' }} />
-              Loading wallets…
+              {t('withdraw.loadingWallets')}
             </div>
           ) : wallets.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '2rem' }}>
               <Icon name="alertCircle" size={40} color="var(--warning)" />
               <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>
-                No wallets found. Please contact support.
+                {t('withdraw.noWallets')}
               </p>
               <button className="rw-btn rw-btn-primary" onClick={() => navigate('/dashboard')} style={{ marginTop: '1rem' }}>
                 Go to Dashboard
@@ -220,7 +222,7 @@ function WithdrawPage() {
 
               {/* From Wallet */}
               <div className="form-group">
-                <label className="form-label">From Wallet</label>
+                <label className="form-label">{t('withdraw.fromWallet')}</label>
                 <select
                   name="fromAddress"
                   className="form-input form-select"
@@ -251,7 +253,7 @@ function WithdrawPage() {
                     {!renaming && (
                       <button type="button" onClick={() => { setRenameValue(cleanLabel(selectedWallet.label)); setRenaming(true); setRenameMsg(''); }}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary-blue)', fontSize: '0.82rem', padding: 0, display: 'flex', alignItems: 'center', gap: 3 }}>
-                        <Icon name="edit" size={13} /> Rename
+                        <Icon name="edit" size={13} /> {t('withdraw.rename')}
                       </button>
                     )}
                   </div>
@@ -280,14 +282,14 @@ function WithdrawPage() {
 
               {/* Recipient Address */}
               <div className="form-group">
-                <label className="form-label">Recipient Address</label>
+                <label className="form-label">{t('withdraw.recipientAddress')}</label>
                 <input
                   type="text"
                   name="toAddress"
                   className="form-input"
                   value={form.toAddress}
                   onChange={handleChange}
-                  placeholder="Destination wallet address"
+                  placeholder={t('withdraw.addressPlaceholder')}
                   required
                   disabled={loading}
                   spellCheck={false}
@@ -296,7 +298,7 @@ function WithdrawPage() {
 
               {/* Amount + Crypto */}
               <div className="form-group">
-                <label className="form-label">Amount</label>
+                <label className="form-label">{t('withdraw.amount')}</label>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <input
                     type="number"
@@ -320,19 +322,19 @@ function WithdrawPage() {
                 </div>
                 {exceedsBalance && (
                   <div style={{ fontSize: '0.82rem', color: 'var(--danger, #ef4444)', marginTop: 4 }}>
-                    Exceeds available balance ({availableBalance} {form.cryptocurrency})
+                    {t('withdraw.exceedsBalance', { balance: availableBalance, symbol: form.cryptocurrency })}
                   </div>
                 )}
               </div>
               <div className="form-group">
-                <label className="form-label">Note <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional)</span></label>
+                <label className="form-label">{t('withdraw.note')}</label>
                 <input
                   type="text"
                   name="description"
                   className="form-input"
                   value={form.description}
                   onChange={handleChange}
-                  placeholder="Reason or reference…"
+                  placeholder={t('withdraw.notePlaceholder')}
                   disabled={loading}
                 />
               </div>
@@ -346,7 +348,7 @@ function WithdrawPage() {
                   disabled={loading}
                   style={{ flex: 1 }}
                 >
-                  Cancel
+                  {t('withdraw.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -355,9 +357,9 @@ function WithdrawPage() {
                   style={{ flex: 1, background: 'linear-gradient(135deg, #ff453a, #ff6b35)' }}
                 >
                   {loading ? (
-                    <><div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> Submitting…</>
+                    <><div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> {t('withdraw.submitting')}</>
                   ) : (
-                    <><Icon name="arrowDown" size={18} /> Request Withdrawal</>
+                    <><Icon name="arrowDown" size={18} /> {t('withdraw.submit')}</>
                   )}
                 </button>
               </div>

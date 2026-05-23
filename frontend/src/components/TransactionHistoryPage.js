@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { transactionAPI } from '../services/api';
 import ExportTransactions from './ExportTransactions';
 import Icon from './Icon';
@@ -7,10 +8,10 @@ import { blockExplorerUrl } from '../utils/sanitizeUrl';
 
 const PAGE_SIZE = 20;
 
-function formatDate(ts) {
+function formatDate(ts, lng) {
   if (!ts) return '-';
   const d = new Date(ts);
-  return d.toLocaleString('en-US', {
+  return d.toLocaleString(lng === 'de' ? 'de-DE' : 'en-US', {
     day: 'numeric', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
   });
@@ -42,11 +43,12 @@ function TxIcon({ type }) {
 }
 
 function StatusBadge({ status }) {
+  const { t } = useTranslation();
   const map = {
-    confirmed: { color: '#27ae60', bg: 'rgba(39,174,96,0.12)',  label: 'Confirmed' },
-    completed:  { color: '#27ae60', bg: 'rgba(39,174,96,0.12)', label: 'Completed' },
-    pending:   { color: '#f39c12', bg: 'rgba(243,156,18,0.12)', label: 'Pending'   },
-    failed:    { color: '#e74c3c', bg: 'rgba(231,76,60,0.12)',  label: 'Failed'    },
+    confirmed: { color: '#27ae60', bg: 'rgba(39,174,96,0.12)',  label: t('transactions.confirmed') },
+    completed:  { color: '#27ae60', bg: 'rgba(39,174,96,0.12)', label: t('transactions.completed') },
+    pending:   { color: '#f39c12', bg: 'rgba(243,156,18,0.12)', label: t('transactions.pending')   },
+    failed:    { color: '#e74c3c', bg: 'rgba(231,76,60,0.12)',  label: t('transactions.failed')    },
   };
   const s = map[status] || { color: 'var(--text-secondary)', bg: 'rgba(128,128,128,0.1)', label: status };
   return (
@@ -61,6 +63,7 @@ function StatusBadge({ status }) {
 }
 
 export default function TransactionHistoryPage() {
+  const { t, i18n } = useTranslation();
   const [txs, setTxs]         = useState([]);
   const [total, setTotal]     = useState(0);
   const [page, setPage]       = useState(0);
@@ -85,7 +88,7 @@ export default function TransactionHistoryPage() {
       setTxs(data.transactions || []);
       setTotal(data.total || 0);
     } catch (_) {
-      setError('Failed to load transactions. Please try again.');
+      setError(t('transactions.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -125,7 +128,7 @@ export default function TransactionHistoryPage() {
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
         <Link to="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'rgba(255,255,255,0.75)', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem', padding: '0.4rem 0.85rem', borderRadius: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', transition: 'background 0.2s' }}>
           <Icon name="chevronLeft" size={16} />
-          Dashboard
+          {t('transactions.backToDashboard')}
         </Link>
       </div>
 
@@ -142,7 +145,7 @@ export default function TransactionHistoryPage() {
         {txs.length > 0 && (
           <div className="dashboard-actions">
             <button className="btn btn-secondary" onClick={() => setShowExport(true)}>
-              <Icon name="upload" size={18} /> Export
+              <Icon name="upload" size={18} /> {t('transactions.export')}
             </button>
           </div>
         )}
@@ -152,28 +155,28 @@ export default function TransactionHistoryPage() {
       <div className="card" style={{ marginBottom: '1.5rem', padding: '1.25rem 1.5rem' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
           <label style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Filter:
+            {t('transactions.filter')}
           </label>
           <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
             style={{ padding: '0.55rem 1rem', borderRadius: 12, border: '1.5px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', outline: 'none' }}
           >
-            <option value="">All types</option>
-            <option value="receive">Received</option>
-            <option value="send">Sent</option>
-            <option value="withdraw">Withdraw</option>
-            <option value="deposit">Deposit</option>
+            <option value="">{t('transactions.allTypes')}</option>
+            <option value="receive">{t('transactions.received')}</option>
+            <option value="send">{t('transactions.sent')}</option>
+            <option value="withdraw">{t('transactions.withdraw')}</option>
+            <option value="deposit">{t('transactions.deposit')}</option>
           </select>
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
             style={{ padding: '0.55rem 1rem', borderRadius: 12, border: '1.5px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', outline: 'none' }}
           >
-            <option value="">All statuses</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="completed">Completed</option>
-            <option value="pending">Pending</option>
-            <option value="failed">Failed</option>
+            <option value="">{t('transactions.allStatuses')}</option>
+            <option value="confirmed">{t('transactions.confirmed')}</option>
+            <option value="completed">{t('transactions.completed')}</option>
+            <option value="pending">{t('transactions.pending')}</option>
+            <option value="failed">{t('transactions.failed')}</option>
           </select>
           <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto' }}>
-            <input type="text" placeholder="Hash, address, coin..."
+            <input type="text" placeholder={t('transactions.searchPlaceholder')}
               value={searchInput}
               onChange={e => { setSearchInput(e.target.value); if (!e.target.value) setSearch(''); }}
               style={{ padding: '0.55rem 1rem', borderRadius: 12, border: '1.5px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-primary)', fontSize: '0.9rem', minWidth: 200, outline: 'none' }}
@@ -189,7 +192,7 @@ export default function TransactionHistoryPage() {
       {loading && (
         <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '1rem', animation: 'pulse 1.5s ease-in-out infinite' }}>&#9203;</div>
-          <p style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Loading transactions...</p>
+          <p style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{t('transactions.loading')}</p>
         </div>
       )}
 
@@ -198,7 +201,7 @@ export default function TransactionHistoryPage() {
         <div className="card" style={{ textAlign: 'center', padding: '2.5rem', border: '1px solid rgba(231,76,60,0.3)' }}>
           <div style={{ marginBottom: '0.75rem' }}><Icon name="alertCircle" size={48} color="var(--danger)" /></div>
           <p style={{ color: 'var(--danger)', fontWeight: 700, fontSize: '1rem', marginBottom: '1.25rem' }}>{error}</p>
-          <button className="btn btn-danger" onClick={() => load(page, typeFilter, statusFilter)}>Retry</button>
+          <button className="btn btn-danger" onClick={() => load(page, typeFilter, statusFilter)}>{t('transactions.retry')}</button>
         </div>
       )}
 
@@ -209,11 +212,11 @@ export default function TransactionHistoryPage() {
             <div className="empty-state-icon" style={{ display: 'flex', justifyContent: 'center', animation: 'bounce 2s ease-in-out infinite' }}>
               <Icon name="repeat" size={64} color="var(--primary-blue)" />
             </div>
-            <div className="empty-state-title">No transactions found</div>
+            <div className="empty-state-title">{t('transactions.noTransactions')}</div>
             <div className="empty-state-text">
               {search || typeFilter || statusFilter
-                ? 'Try adjusting your filters or search query.'
-                : 'Your transaction history will appear here once you start sending or receiving crypto.'}
+                ? t('transactions.noTransactionsHint')
+                : t('transactions.emptyHistory')}
             </div>
           </div>
         </div>
@@ -242,14 +245,14 @@ export default function TransactionHistoryPage() {
                     <div className="transaction-info">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <span className="transaction-type">
-                          {tx.type === 'receive' ? 'Received' : tx.type === 'send' ? 'Sent' : tx.type === 'withdraw' ? 'Withdrew' : tx.type}
+                          {tx.type === 'receive' ? t('transactions.received') : tx.type === 'send' ? t('transactions.sent') : tx.type === 'withdraw' ? t('transactions.withdrew') : tx.type}
                         </span>
                         <StatusBadge status={tx.status} />
                         <span style={{ background: 'rgba(102,126,234,0.1)', color: 'var(--primary-blue)', padding: '2px 8px', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700 }}>
                           {tx.cryptocurrency || '-'}
                         </span>
                       </div>
-                      <div className="transaction-date">{formatDate(tx.timestamp)}</div>
+                      <div className="transaction-date">{formatDate(tx.timestamp, i18n.language)}</div>
                       {tx.txHash && (
                         <div className="transaction-hash">{tx.txHash.slice(0, 16)}...</div>
                       )}
@@ -275,11 +278,11 @@ export default function TransactionHistoryPage() {
                     gap: '0.75rem 1.5rem', animation: 'fadeInUp 0.3s ease-out',
                   }}>
                     {[
-                      ['Network',       tx.network       || '-'],
-                      ['Block',         String(tx.blockNumber || '-')],
-                      ['Confirmations', tx.confirmations != null ? String(tx.confirmations) : '-'],
-                      ['From', tx.fromAddress ? shortAddr(tx.fromAddress) : '-'],
-                      ['To',   tx.toAddress   ? shortAddr(tx.toAddress)   : '-'],
+                      [t('transactions.network'),       tx.network       || '-'],
+                      [t('transactions.block'),         String(tx.blockNumber || '-')],
+                      [t('transactions.confirmations'), tx.confirmations != null ? String(tx.confirmations) : '-'],
+                      [t('transactions.from'), tx.fromAddress ? shortAddr(tx.fromAddress) : '-'],
+                      [t('transactions.to'),   tx.toAddress   ? shortAddr(tx.toAddress)   : '-'],
                     ].map(([label, val]) => (
                       <div key={label}>
                         <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 3 }}>
@@ -293,7 +296,7 @@ export default function TransactionHistoryPage() {
                     {tx.txHash && (
                       <div style={{ gridColumn: '1 / -1' }}>
                         <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 3 }}>
-                          Transaction Hash
+                          {t('transactions.txHash')}
                         </div>
                         <button
                           onClick={() => {
@@ -317,7 +320,7 @@ export default function TransactionHistoryPage() {
       {!loading && !error && totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '1.75rem', flexWrap: 'wrap' }}>
           <button className="btn btn-secondary" disabled={page === 0} onClick={() => handlePageChange(page - 1)} style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}>
-            Prev
+            {t('transactions.prev')}
           </button>
           {Array.from({ length: totalPages }, (_, i) => i)
             .filter(i => i === 0 || i === totalPages - 1 || Math.abs(i - page) <= 2)
@@ -334,7 +337,7 @@ export default function TransactionHistoryPage() {
               )
             )}
           <button className="btn btn-secondary" disabled={page >= totalPages - 1} onClick={() => handlePageChange(page + 1)} style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}>
-            Next
+            {t('transactions.next')}
           </button>
         </div>
       )}

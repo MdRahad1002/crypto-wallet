@@ -1,27 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supportAPI } from '../services/api';
 import Icon from './Icon';
 
-const SUBJECTS = [
-  'Withdrawal issue',
-  'Deposit not received',
-  'KYC verification',
-  'Account access',
-  'Transaction question',
-  'Security concern',
-  'Other',
-];
 
-const STATUS_CONFIG = {
-  open:        { label: 'Open',        color: '#4a9eff', bg: 'rgba(74,158,255,0.12)' },
-  in_progress: { label: 'In Progress', color: '#ff9f0a', bg: 'rgba(255,159,10,0.12)' },
-  resolved:    { label: 'Resolved',    color: '#34c759', bg: 'rgba(52,199,89,0.12)'  },
-  closed:      { label: 'Closed',      color: '#8e8e93', bg: 'rgba(142,142,147,0.12)' },
-};
 
 function SupportPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const STATUS_CONFIG = {
+    open:        { label: t('support.status.open'),       color: '#4a9eff', bg: 'rgba(74,158,255,0.12)' },
+    in_progress: { label: t('support.status.inProgress'), color: '#ff9f0a', bg: 'rgba(255,159,10,0.12)' },
+    resolved:    { label: t('support.status.resolved'),   color: '#34c759', bg: 'rgba(52,199,89,0.12)'  },
+    closed:      { label: t('support.status.closed'),     color: '#8e8e93', bg: 'rgba(142,142,147,0.12)' },
+  };
 
   // ── tab state ────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('new'); // 'new' | 'cases'
@@ -62,21 +56,21 @@ function SupportPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.subject) return setResult({ ok: false, text: 'Please select a subject.' });
+    if (!form.subject) return setResult({ ok: false, text: t('support.errors.subjectRequired') });
     if (form.subject === 'Other' && !form.customSubject.trim())
-      return setResult({ ok: false, text: 'Please describe your subject.' });
-    if (!form.message.trim()) return setResult({ ok: false, text: 'Message is required.' });
+      return setResult({ ok: false, text: t('support.errors.describeRequired') });
+    if (!form.message.trim()) return setResult({ ok: false, text: t('support.errors.messageRequired') });
 
     setLoading(true);
     setResult(null);
     try {
       await supportAPI.submit({ subject: subjectValue.trim(), message: form.message.trim() });
-      setResult({ ok: true, text: 'Your message has been sent. Our team will respond shortly.' });
+      setResult({ ok: true, text: t('support.successMessage') });
       setForm({ subject: '', customSubject: '', message: '' });
       // invalidate case list so it refreshes next time
       setTicketsFetched(false);
     } catch (err) {
-      setResult({ ok: false, text: err.response?.data?.message || 'Failed to send. Please try again.' });
+      setResult({ ok: false, text: err.response?.data?.message || t('support.errors.sendFailed') });
     } finally {
       setLoading(false);
     }
@@ -86,8 +80,8 @@ function SupportPage() {
   const TabBar = () => (
     <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid var(--border)' }}>
       {[
-        { id: 'new',   label: '✉️ New Ticket' },
-        { id: 'cases', label: '📋 My Cases'   },
+        { id: 'new',   label: t('support.newTicket') },
+        { id: 'cases', label: t('support.myCases')   },
       ].map(({ id, label }) => (
         <button
           key={id}
@@ -118,7 +112,7 @@ function SupportPage() {
           onClick={() => navigate('/dashboard')}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: '1rem', background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', padding: 0 }}
         >
-          ← Back to Dashboard
+          ← {t('support.backToDashboard')}
         </button>
 
         <div className="rw-recover-header">
@@ -127,8 +121,8 @@ function SupportPage() {
               <Icon name="infoCircle" size={28} color="#4a9eff" />
             </div>
           </div>
-          <h1>Support</h1>
-          <p className="rw-muted" style={{ textAlign: 'center', marginTop: 4 }}>24/7 recovery assistance for critical cases</p>
+          <h1>{t('support.title')}</h1>
+          <p className="rw-muted" style={{ textAlign: 'center', marginTop: 4 }}>{t('support.subtitle')}</p>
         </div>
 
         <div className="rw-recover-box">
@@ -140,14 +134,14 @@ function SupportPage() {
               {result?.ok ? (
                 <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
                   <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
-                  <h2 style={{ marginBottom: 8 }}>Message Sent</h2>
+                  <h2 style={{ marginBottom: 8 }}>{t('support.sent')}</h2>
                   <p style={{ color: 'var(--text-secondary)' }}>{result.text}</p>
                   <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
                     <button className="rw-btn rw-btn-secondary" style={{ flex: 1 }} onClick={() => setResult(null)}>
-                      New Ticket
+                      {t('support.newTicketBtn')}
                     </button>
                     <button className="rw-btn rw-btn-primary" style={{ flex: 1 }} onClick={() => { setActiveTab('cases'); setTicketsFetched(false); }}>
-                      View My Cases
+                      {t('support.viewCases')}
                     </button>
                   </div>
                 </div>
@@ -160,26 +154,32 @@ function SupportPage() {
                   )}
 
                   <div className="form-group">
-                    <label className="form-label">Subject</label>
+                    <label className="form-label">{t('support.subject')}</label>
                     <select
                       className="form-input form-select"
                       value={form.subject}
                       onChange={e => setForm(f => ({ ...f, subject: e.target.value, customSubject: '' }))}
                       required
                     >
-                      <option value="">Select a topic…</option>
-                      {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                      <option value="">{t('support.subjectPlaceholder')}</option>
+                      <option value="Withdrawal issue">{t('support.topics.withdrawal')}</option>
+                      <option value="Deposit not received">{t('support.topics.deposit')}</option>
+                      <option value="KYC verification">{t('support.topics.kyc')}</option>
+                      <option value="Account access">{t('support.topics.access')}</option>
+                      <option value="Transaction question">{t('support.topics.transaction')}</option>
+                      <option value="Security concern">{t('support.topics.security')}</option>
+                      <option value="Other">{t('support.topics.other')}</option>
                     </select>
                   </div>
 
                   {form.subject === 'Other' && (
                     <div className="form-group">
-                      <label className="form-label">Describe your topic</label>
+                      <label className="form-label">{t('support.describeSubject')}</label>
                       <input
                         className="form-input"
                         type="text"
                         maxLength={120}
-                        placeholder="Brief subject"
+                        placeholder={t('support.briefSubject')}
                         value={form.customSubject}
                         onChange={e => setForm(f => ({ ...f, customSubject: e.target.value }))}
                       />
@@ -187,13 +187,13 @@ function SupportPage() {
                   )}
 
                   <div className="form-group">
-                    <label className="form-label">Message</label>
+                    <label className="form-label">{t('support.message')}</label>
                     <textarea
                       className="form-input"
                       rows={6}
                       maxLength={2000}
                       style={{ resize: 'vertical', fontFamily: 'inherit' }}
-                      placeholder="Describe your issue in detail…"
+                      placeholder={t('support.messagePlaceholder')}
                       value={form.message}
                       onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
                       required
@@ -208,7 +208,7 @@ function SupportPage() {
                       Cancel
                     </button>
                     <button type="submit" className="rw-btn rw-btn-primary" style={{ flex: 1 }} disabled={loading}>
-                      {loading ? <><div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> Sending…</> : 'Send Message'}
+                      {loading ? <><div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> {t('deposit.loading')}</> : t('support.send')}
                     </button>
                   </div>
                 </form>

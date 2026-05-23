@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { authAPI } from '../services/api';
 import { useAuth } from '../auth/useAuth';
 import Icon from './Icon';
+import LanguageToggle from './LanguageToggle';
 
 function Login() {
+  const { t } = useTranslation();
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -38,7 +41,7 @@ function Login() {
       const redirectTo = isSafePath ? requestedPath : '/dashboard';
       navigate(redirectTo, { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      setError(err.response?.data?.message || t('login.loginFailed'));
     } finally {
       setLoading(false);
     }
@@ -57,8 +60,8 @@ function Login() {
             <img src="/bluewallet-logo.svg" alt="BlueWallet Security" style={{ height: 44, marginBottom: 4 }} />
             <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Security</span>
           </div>
-          <h2 className="auth-title">Welcome Back</h2>
-          <p className="auth-subtitle">Sign in to your BlueWallet Security account</p>
+          <h2 className="auth-title">{t('login.title')}</h2>
+          <p className="auth-subtitle">{t('login.subtitle')}</p>
         </div>
         
         {error && (
@@ -81,14 +84,14 @@ function Login() {
           <div className="form-group">
             <label className="form-label">
               <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Icon name="user" size={16} /> Email Address
+                <Icon name="user" size={16} /> {t('login.emailLabel')}
               </span>
             </label>
             <input
               type="email"
               name="email"
               className="form-input"
-              placeholder="your@email.com"
+              placeholder={t('login.emailPlaceholder')}
               value={formData.email}
               onChange={handleChange}
               required
@@ -99,7 +102,7 @@ function Login() {
           <div className="form-group">
             <label className="form-label">
               <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Icon name="lock" size={16} /> Password
+                <Icon name="lock" size={16} /> {t('login.passwordLabel')}
               </span>
             </label>
             <input
@@ -118,16 +121,19 @@ function Login() {
             {loading ? (
               <>
                 <div className="spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }}></div>
-                Signing in...
+                {t('login.signingIn')}
               </>
             ) : (
               <>
-                Sign In <span style={{ marginLeft: '0.5rem' }}>→</span>
+                {t('login.signIn')}
               </>
             )}
           </button>
         </form>
         
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0.5rem' }}>
+          <LanguageToggle />
+        </div>
         <div style={{
           marginTop: '1rem',
           padding: '0.75rem 1rem',
@@ -138,7 +144,7 @@ function Login() {
           color: '#888',
           border: '1px solid rgba(74, 158, 255, 0.15)'
         }}>
-          Forgot your password? Contact your administrator to have it reset.
+          {t('login.forgotPassword')}
         </div>
       </div>
     </div>
