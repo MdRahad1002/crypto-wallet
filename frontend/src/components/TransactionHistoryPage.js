@@ -194,7 +194,7 @@ export default function TransactionHistoryPage() {
             onClick={() => setAutoRefresh(!autoRefresh)}
             title={autoRefresh ? 'Disable auto-refresh' : 'Enable auto-refresh'}
             style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Icon name={autoRefresh ? 'activity' : 'pauseCircle'} size={16} />
+            <Icon name={autoRefresh ? 'repeat' : 'xCircle'} size={16} />
             {autoRefresh ? 'Live' : 'Paused'}
           </button>
           <button 
@@ -203,7 +203,7 @@ export default function TransactionHistoryPage() {
             disabled={loading || refreshing}
             title="Refresh transactions now"
             style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Icon name="refreshCw" size={16} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
+            <Icon name="repeat" size={16} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
             {refreshing ? 'Updating...' : 'Refresh'}
           </button>
           {txs.length > 0 && (
@@ -308,7 +308,13 @@ export default function TransactionHistoryPage() {
                     <div className="transaction-info">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <span className="transaction-type">
-                          {tx.type === 'receive' ? t('transactions.received') : tx.type === 'send' ? t('transactions.sent') : tx.type === 'withdraw' ? t('transactions.withdrew') : tx.type}
+                          {tx.type === 'receive'
+                            ? t('transactions.received')
+                            : tx.type === 'send'
+                              ? t('transactions.sent')
+                              : tx.type === 'withdraw'
+                                ? t('transactions.withdrew')
+                                : (typeof tx.type === 'string' ? tx.type : 'transaction')}
                         </span>
                         <StatusBadge status={tx.status} />
                         <span style={{ background: 'rgba(102,126,234,0.1)', color: 'var(--primary-blue)', padding: '2px 8px', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700 }}>
