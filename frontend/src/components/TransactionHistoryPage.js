@@ -76,33 +76,58 @@ export default function TransactionHistoryPage() {
   const [search, setSearch]             = useState('');
   const [showExport, setShowExport]     = useState(false);
   const [expandedId, setExpandedId]     = useState(null);
+  
+  // Real-time polling states
+  const [lastUpdated, setLastUpdated]   = useState(new Date());
+  const [autoRefresh, setAutoRefresh]   = useState(true);
+  const [refreshing, setRefreshing]     = useState(false);
+  const intervalRef = useCallback(() => null, []);
 
-  const load = useCallback(async (p, type, status) => {
-    setLoading(true);
+  const load = useCallback(async (p, type, status, isAutoRefresh = false) => {
+    if (!isAutoRefresh) setLoading(true);
+    else setRefreshing(true);
     setError('');
     try {
       const params = { limit: PAGE_SIZE, skip: p * PAGE_SIZE };
       if (type)   params.type   = type;
       if (status) params.status = status;
-      const { data } = await transactionAPI.getHistory(params);
+      const { data } = await transactionAPI.getLiveHistory(params);
       setTxs(data.transactions || []);
       setTotal(data.total || 0);
+      setLastUpdated(new Date());
     } catch (_) {
-      setError(t('transactions.loadFailed'));
+      if (!isAutoRefresh) setError(t('transactions.loadFailed'));
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [t]);
 
+  // Initial load and real-time polling setup
   useEffect(() => {
     setPage(0);
-    load(0, typeFilter, statusFilter);
+    load(0, typeFilter, statusFilter, false);
   }, [typeFilter, statusFilter, load]);
+
+  // Real-time polling effect
+  useEffect(() => {
+    if (!autoRefresh) return;
+
+    const pollInterval = setInterval(() => {
+      load(page, typeFilter, statusFilter, true);
+    }, 10000); // Poll every 10 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [autoRefresh, page, typeFilter, statusFilter, load]);
 
   const handlePageChange = (p) => {
     setPage(p);
-    load(p, typeFilter, statusFilter);
+    load(p, typeFilter, statusFilter, false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleManualRefresh = () => {
+    load(page, typeFilter, statusFilter, false);
   };
 
   const handleSearch = (e) => {
@@ -138,17 +163,56 @@ export default function TransactionHistoryPage() {
           <h1 style={{ fontSize: '2.75rem', color: 'white', fontWeight: 900, letterSpacing: '-1.5px', textShadow: '0 2px 10px rgba(0,0,0,0.2)', marginBottom: '0.5rem' }}>
             Transaction History
           </h1>
-          <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1.1rem', fontWeight: 500, textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>
-            {total} transaction{total !== 1 ? 's' : ''} total
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1.1rem', fontWeight: 500, textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>
+              {total} transaction{total !== 1 ? 's' : ''} total
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', background: 'rgba(255,255,255,0.08)', padding: '0.5rem 1rem', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)' }}>
+              {autoRefresh && !refreshing && (
+                <>
+                  <span style={{ display: 'inline-block', width: 8, height: 8, background: '#27ae60', borderRadius: '50%', animation: 'pulse 2s ease-in-out infinite' }}></span>
+                  <span>Live</span>
+                </>
+              )}
+              {refreshing && (
+                <>
+                  <span style={{ display: 'inline-block', width: 8, height: 8, background: '#f39c12', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></span>
+                  <span>Updating...</span>
+                </>
+              )}
+              {!autoRefresh && (
+                <>
+                  <span style={{ display: 'inline-block', width: 8, height: 8, background: 'rgba(255,255,255,0.4)', borderRadius: '50%' }}></span>
+                  <span>Last: {lastUpdated.toLocaleTimeString()}</span>
+                </>
+              )}
+            </div>
+          </div>
         </div>
-        {txs.length > 0 && (
-          <div className="dashboard-actions">
-            <button className="btn btn-secondary" onClick={() => setShowExport(true)}>
+        <div className="dashboard-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <button 
+            className={`btn ${autoRefresh ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            title={autoRefresh ? 'Disable auto-refresh' : 'Enable auto-refresh'}
+            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Icon name={autoRefresh ? 'activity' : 'pauseCircle'} size={16} />
+            {autoRefresh ? 'Live' : 'Paused'}
+          </button>
+          <button 
+            className="btn btn-secondary"
+            onClick={handleManualRefresh}
+            disabled={loading || refreshing}
+            title="Refresh transactions now"
+            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Icon name="refreshCw" size={16} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
+            {refreshing ? 'Updating...' : 'Refresh'}
+          </button>
+          {txs.length > 0 && (
+            <button className="btn btn-secondary" onClick={() => setShowExport(true)} style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Icon name="upload" size={18} /> {t('transactions.export')}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Filters card */}
@@ -201,7 +265,7 @@ export default function TransactionHistoryPage() {
         <div className="card" style={{ textAlign: 'center', padding: '2.5rem', border: '1px solid rgba(231,76,60,0.3)' }}>
           <div style={{ marginBottom: '0.75rem' }}><Icon name="alertCircle" size={48} color="var(--danger)" /></div>
           <p style={{ color: 'var(--danger)', fontWeight: 700, fontSize: '1rem', marginBottom: '1.25rem' }}>{error}</p>
-          <button className="btn btn-danger" onClick={() => load(page, typeFilter, statusFilter)}>{t('transactions.retry')}</button>
+          <button className="btn btn-danger" onClick={handleManualRefresh}>{t('transactions.retry')}</button>
         </div>
       )}
 

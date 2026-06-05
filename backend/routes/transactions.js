@@ -47,6 +47,145 @@ router.get('/history', auth, async (req, res) => {
   }
 });
 
+function normalizeLiveTx(tx, address, fallbackNetwork = 'bitcoin') {
+  const txHash = tx.hash || tx.txHash || tx.transaction_hash || '';
+  const fromAddress = tx.fromAddress || tx.from || tx.sender || '';
+  const toAddress = tx.toAddress || tx.to || tx.recipient || '';
+  const network = (tx.network || fallbackNetwork || 'bitcoin').toLowerCase();
+  const cryptocurrency = tx.cryptocurrency || (network === 'bitcoin' || network === 'btc' ? 'BTC' : network === 'ethereum' || network === 'eth' ? 'ETH' : network.toUpperCase());
+
+  const rawType = (tx.type || tx.direction || '').toLowerCase();
+  let type = rawType;
+  if (!type || !['send', 'receive', 'withdraw', 'deposit', 'received', 'sent', 'self'].includes(type)) {
+    const a = (address || '').toLowerCase();
+    const from = String(fromAddress || '').toLowerCase();
+    const to = String(toAddress || '').toLowerCase();
+    if (to && a && to === a && from !== a) type = 'receive';
+    else if (from && a && from === a && to !== a) type = 'send';
+    else type = 'receive';
+  }
+
+  if (type === 'received') type = 'receive';
+  if (type === 'sent') type = 'send';
+  if (type === 'self') type = 'send';
+
+  let amount = 0;
+  if (typeof tx.amount === 'number') amount = tx.amount;
+  else if (typeof tx.value === 'number') amount = tx.value;
+  else if (typeof tx.value === 'string') amount = Number(tx.value) || 0;
+
+  return {
+    _id: tx._id || txHash || `${network}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    txHash,
+    type,
+    status: tx.status || ((tx.confirmations || 0) > 0 ? 'confirmed' : 'pending'),
+    amount,
+    timestamp: tx.timestamp || tx.time || Date.now(),
+    fromAddress,
+    toAddress,
+    network,
+    cryptocurrency,
+    blockNumber: tx.blockNumber || tx.block_id || null,
+    confirmations: tx.confirmations ?? 0,
+    source: tx.source || 'blockchair'
+  };
+}
+
+// Get real-time transaction history from Blockchair (optionally merged with local pending txs)
+router.get('/history/live', auth, async (req, res) => {
+  try {
+    const { limit = 50, skip = 0, type, status, address, network = 'bitcoin', includeLocalPending = 'true' } = req.query;
+    const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 100);
+    const safeSkip = Math.max(parseInt(skip, 10) || 0, 0);
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const wallets = Array.isArray(user.wallets) ? user.wallets : [];
+    if (wallets.length === 0) {
+      return res.json({ transactions: [], total: 0, limit: safeLimit, skip: safeSkip });
+    }
+
+    const requestedAddress = typeof address === 'string' && address.trim() ? address.trim() : null;
+    const selectedWallets = requestedAddress
+      ? wallets.filter(w => String(w.address || '').toLowerCase() === requestedAddress.toLowerCase())
+      : wallets;
+
+    if (requestedAddress && selectedWallets.length === 0) {
+      return res.status(404).json({ message: 'Wallet not found' });
+    }
+
+    const liveTxArrays = await Promise.all(
+      selectedWallets.map(async (w) => {
+        const addr = String(w.address || '');
+        const chain = String(network || w.network || 'bitcoin').toLowerCase();
+        if (!addr) return [];
+        try {
+          const fetched = chain === 'bitcoin' || chain === 'btc'
+            ? await btcService.getTransactions(addr)
+            : await explorerService.getAllTransactions(addr, chain);
+          return (Array.isArray(fetched) ? fetched : []).map(tx => normalizeLiveTx(tx, addr, chain));
+        } catch (e) {
+          logger.warn('live_history_wallet_fetch_failed', { address: addr, chain, message: e.message });
+          return [];
+        }
+      })
+    );
+
+    let merged = liveTxArrays.flat();
+
+    if (String(includeLocalPending).toLowerCase() === 'true') {
+      const localPending = await Transaction.find({
+        userId: req.userId,
+        status: { $in: ['pending', 'failed'] }
+      }).sort({ timestamp: -1 }).limit(200);
+
+      const normalizedLocal = localPending.map(tx => ({
+        _id: tx._id,
+        txHash: tx.txHash || '',
+        type: tx.type,
+        status: tx.status,
+        amount: Number(tx.amount || 0),
+        timestamp: tx.timestamp || tx.createdAt || Date.now(),
+        fromAddress: tx.fromAddress || '',
+        toAddress: tx.toAddress || '',
+        network: tx.network || 'bitcoin',
+        cryptocurrency: tx.cryptocurrency || 'BTC',
+        blockNumber: tx.blockNumber || null,
+        confirmations: tx.confirmations ?? 0,
+        source: 'local'
+      }));
+
+      const seenHashes = new Set(merged.filter(t => t.txHash).map(t => t.txHash.toLowerCase()));
+      normalizedLocal.forEach(tx => {
+        const key = tx.txHash ? tx.txHash.toLowerCase() : `local-${tx._id}`;
+        if (!seenHashes.has(key)) merged.push(tx);
+      });
+    }
+
+    if (type) merged = merged.filter(t => String(t.type || '').toLowerCase() === String(type).toLowerCase());
+    if (status) merged = merged.filter(t => String(t.status || '').toLowerCase() === String(status).toLowerCase());
+
+    merged.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    const total = merged.length;
+    const paginated = merged.slice(safeSkip, safeSkip + safeLimit);
+
+    res.json({
+      transactions: paginated,
+      total,
+      limit: safeLimit,
+      skip: safeSkip,
+      realtime: true
+    });
+  } catch (error) {
+    logger.error('Error fetching live transaction history', { message: error.message });
+    res.status(500).json({ message: 'Error fetching live transactions', error: error.message });
+  }
+});
+
 // Get blockchain transaction history for a specific address
 router.get('/blockchain/:address', auth, async (req, res) => {
   try {
