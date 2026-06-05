@@ -81,7 +81,6 @@ export default function TransactionHistoryPage() {
   const [lastUpdated, setLastUpdated]   = useState(new Date());
   const [autoRefresh, setAutoRefresh]   = useState(true);
   const [refreshing, setRefreshing]     = useState(false);
-  const intervalRef = useCallback(() => null, []);
 
   const load = useCallback(async (p, type, status, isAutoRefresh = false) => {
     if (!isAutoRefresh) setLoading(true);
