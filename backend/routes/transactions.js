@@ -47,19 +47,35 @@ router.get('/history', auth, async (req, res) => {
   }
 });
 
-function normalizeLiveTx(tx, address, fallbackNetwork = 'bitcoin') {
-  const txHash = tx.hash || tx.txHash || tx.transaction_hash || '';
-  const fromAddress = tx.fromAddress || tx.from || tx.sender || '';
-  const toAddress = tx.toAddress || tx.to || tx.recipient || '';
-  const network = (tx.network || fallbackNetwork || 'bitcoin').toLowerCase();
-  const cryptocurrency = tx.cryptocurrency || (network === 'bitcoin' || network === 'btc' ? 'BTC' : network === 'ethereum' || network === 'eth' ? 'ETH' : network.toUpperCase());
+function toRenderableString(value, fallback = '') {
+  if (value == null) return fallback;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) return value.length ? toRenderableString(value[0], fallback) : fallback;
+  if (typeof value === 'object') {
+    if (typeof value.status === 'string') return value.status;
+    if (typeof value.value === 'string' || typeof value.value === 'number') return String(value.value);
+    const keys = Object.keys(value);
+    return keys.length === 1 ? String(keys[0]) : fallback;
+  }
+  return fallback;
+}
 
-  const rawType = (tx.type || tx.direction || '').toLowerCase();
+function normalizeLiveTx(tx, address, fallbackNetwork = 'bitcoin') {
+  const txHash = toRenderableString(tx.hash || tx.txHash || tx.transaction_hash || '', '');
+  const fromAddress = toRenderableString(tx.fromAddress || tx.from || tx.sender || '', '');
+  const toAddress = toRenderableString(tx.toAddress || tx.to || tx.recipient || '', '');
+  const network = toRenderableString(tx.network || fallbackNetwork || 'bitcoin', 'bitcoin').toLowerCase();
+  const cryptocurrency = toRenderableString(
+    tx.cryptocurrency || (network === 'bitcoin' || network === 'btc' ? 'BTC' : network === 'ethereum' || network === 'eth' ? 'ETH' : network.toUpperCase()),
+    'BTC'
+  );
+
+  const rawType = toRenderableString(tx.type || tx.direction || '', '').toLowerCase();
   let type = rawType;
   if (!type || !['send', 'receive', 'withdraw', 'deposit', 'received', 'sent', 'self'].includes(type)) {
-    const a = (address || '').toLowerCase();
-    const from = String(fromAddress || '').toLowerCase();
-    const to = String(toAddress || '').toLowerCase();
+    const a = toRenderableString(address, '').toLowerCase();
+    const from = toRenderableString(fromAddress, '').toLowerCase();
+    const to = toRenderableString(toAddress, '').toLowerCase();
     if (to && a && to === a && from !== a) type = 'receive';
     else if (from && a && from === a && to !== a) type = 'send';
     else type = 'receive';
@@ -74,18 +90,22 @@ function normalizeLiveTx(tx, address, fallbackNetwork = 'bitcoin') {
   else if (typeof tx.value === 'number') amount = tx.value;
   else if (typeof tx.value === 'string') amount = Number(tx.value) || 0;
 
+  const txStatus = toRenderableString(tx.status, '');
+  const confirmedFlag = typeof tx.confirmed === 'boolean' ? tx.confirmed : undefined;
+  const fallbackStatus = confirmedFlag === true ? 'confirmed' : ((tx.confirmations || 0) > 0 ? 'confirmed' : 'pending');
+
   return {
     _id: tx._id || txHash || `${network}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     txHash,
     type,
-    status: tx.status || ((tx.confirmations || 0) > 0 ? 'confirmed' : 'pending'),
+    status: (txStatus || fallbackStatus).toLowerCase(),
     amount,
-    timestamp: tx.timestamp || tx.time || Date.now(),
+    timestamp: tx.timestamp || tx.time || tx.block_time || Date.now(),
     fromAddress,
     toAddress,
     network,
     cryptocurrency,
-    blockNumber: tx.blockNumber || tx.block_id || null,
+    blockNumber: tx.blockNumber || tx.block_id || tx.block_height || null,
     confirmations: tx.confirmations ?? 0,
     source: tx.source || 'blockchair'
   };
