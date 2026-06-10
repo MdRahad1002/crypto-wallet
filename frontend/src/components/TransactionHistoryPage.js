@@ -42,15 +42,52 @@ function TxIcon({ type }) {
   );
 }
 
+function normalizePrimitive(value, fallback = '-') {
+  if (value == null) return fallback;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  if (Array.isArray(value)) return value.length ? String(value[0]) : fallback;
+  if (typeof value === 'object') {
+    const keys = Object.keys(value);
+    if (keys.length === 1) return String(keys[0]);
+    if ('value' in value && (typeof value.value === 'string' || typeof value.value === 'number')) {
+      return String(value.value);
+    }
+    return fallback;
+  }
+  return fallback;
+}
+
+function normalizeTx(tx) {
+  const type = normalizePrimitive(tx?.type, 'transaction').toLowerCase();
+  const status = normalizePrimitive(tx?.status, 'pending').toLowerCase();
+  const cryptocurrency = normalizePrimitive(tx?.cryptocurrency, '-');
+  const network = normalizePrimitive(tx?.network, '-');
+  return {
+    ...tx,
+    type,
+    status,
+    cryptocurrency,
+    network,
+    txHash: normalizePrimitive(tx?.txHash, ''),
+    fromAddress: normalizePrimitive(tx?.fromAddress, ''),
+    toAddress: normalizePrimitive(tx?.toAddress, ''),
+    amount: Number(tx?.amount || 0),
+    confirmations: tx?.confirmations != null ? Number(tx.confirmations) : null,
+  };
+}
+
 function StatusBadge({ status }) {
   const { t } = useTranslation();
+  const safeStatus = normalizePrimitive(status, 'pending').toLowerCase();
   const map = {
     confirmed: { color: '#27ae60', bg: 'rgba(39,174,96,0.12)',  label: t('transactions.confirmed') },
-    completed:  { color: '#27ae60', bg: 'rgba(39,174,96,0.12)', label: t('transactions.completed') },
-    pending:   { color: '#f39c12', bg: 'rgba(243,156,18,0.12)', label: t('transactions.pending')   },
-    failed:    { color: '#e74c3c', bg: 'rgba(231,76,60,0.12)',  label: t('transactions.failed')    },
+    completed: { color: '#27ae60', bg: 'rgba(39,174,96,0.12)',  label: t('transactions.completed') },
+    pending:   { color: '#f39c12', bg: 'rgba(243,156,18,0.12)', label: t('transactions.pending') },
+    failed:    { color: '#e74c3c', bg: 'rgba(231,76,60,0.12)',  label: t('transactions.failed') },
   };
-  const s = map[status] || { color: 'var(--text-secondary)', bg: 'rgba(128,128,128,0.1)', label: status };
+  const s = map[safeStatus] || { color: 'var(--text-secondary)', bg: 'rgba(128,128,128,0.1)', label: safeStatus };
   return (
     <span style={{
       display: 'inline-block', padding: '3px 10px', borderRadius: 20,
@@ -91,7 +128,7 @@ export default function TransactionHistoryPage() {
       if (type)   params.type   = type;
       if (status) params.status = status;
       const { data } = await transactionAPI.getLiveHistory(params);
-      setTxs(data.transactions || []);
+      setTxs((data.transactions || []).map(normalizeTx));
       setTotal(data.total || 0);
       setLastUpdated(new Date());
     } catch (_) {
@@ -136,10 +173,10 @@ export default function TransactionHistoryPage() {
 
   const displayed = search
     ? txs.filter(tx =>
-        (tx.txHash      && tx.txHash.toLowerCase().includes(search)) ||
-        (tx.fromAddress && tx.fromAddress.toLowerCase().includes(search)) ||
-        (tx.toAddress   && tx.toAddress.toLowerCase().includes(search)) ||
-        (tx.cryptocurrency && tx.cryptocurrency.toLowerCase().includes(search))
+        (normalizePrimitive(tx.txHash, '').toLowerCase().includes(search)) ||
+        (normalizePrimitive(tx.fromAddress, '').toLowerCase().includes(search)) ||
+        (normalizePrimitive(tx.toAddress, '').toLowerCase().includes(search)) ||
+        (normalizePrimitive(tx.cryptocurrency, '').toLowerCase().includes(search))
       )
     : txs;
 
