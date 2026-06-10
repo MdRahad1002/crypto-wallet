@@ -63,8 +63,7 @@ function normalizePrimitive(value, fallback = '-') {
     if ('symbol' in value && typeof value.symbol === 'string') {
       return value.symbol;
     }
-    const keys = Object.keys(value);
-    if (keys.length === 1) return String(keys[0]);
+    // Critical: never let unknown objects reach JSX
     return fallback;
   }
   return fallback;
