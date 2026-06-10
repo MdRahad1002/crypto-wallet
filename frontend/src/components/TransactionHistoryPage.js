@@ -182,14 +182,33 @@ export default function TransactionHistoryPage() {
     setSearch(searchInput.trim().toLowerCase());
   };
 
-  const displayed = search
+  const displayed = (search
     ? txs.filter(tx =>
         (normalizePrimitive(tx.txHash, '').toLowerCase().includes(search)) ||
         (normalizePrimitive(tx.fromAddress, '').toLowerCase().includes(search)) ||
         (normalizePrimitive(tx.toAddress, '').toLowerCase().includes(search)) ||
         (normalizePrimitive(tx.cryptocurrency, '').toLowerCase().includes(search))
       )
-    : txs;
+    : txs
+  ).map((tx, idx) => {
+    const safe = normalizeTx(tx);
+    const safeTimestamp = normalizePrimitive(tx?.timestamp, '');
+    return {
+      ...safe,
+      _id: normalizePrimitive(tx?._id, `tx-${idx}`),
+      txHash: normalizePrimitive(tx?.txHash, ''),
+      fromAddress: normalizePrimitive(tx?.fromAddress, ''),
+      toAddress: normalizePrimitive(tx?.toAddress, ''),
+      network: normalizePrimitive(tx?.network, '-'),
+      cryptocurrency: normalizePrimitive(tx?.cryptocurrency, '-'),
+      timestamp: safeTimestamp,
+      blockNumber: normalizePrimitive(tx?.blockNumber, normalizePrimitive(tx?.block_height, '-')),
+      confirmations: normalizePrimitive(tx?.confirmations, '-'),
+      amount: Number(tx?.amount || 0),
+      status: normalizePrimitive(tx?.status, 'pending').toLowerCase(),
+      type: normalizePrimitive(tx?.type, 'transaction').toLowerCase(),
+    };
+  });
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
