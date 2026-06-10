@@ -47,13 +47,24 @@ function normalizePrimitive(value, fallback = '-') {
   if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
     return String(value);
   }
-  if (Array.isArray(value)) return value.length ? String(value[0]) : fallback;
+  if (Array.isArray(value)) return value.length ? normalizePrimitive(value[0], fallback) : fallback;
   if (typeof value === 'object') {
-    const keys = Object.keys(value);
-    if (keys.length === 1) return String(keys[0]);
+    if ('status' in value && (typeof value.status === 'string' || typeof value.status === 'number' || typeof value.status === 'boolean')) {
+      return String(value.status);
+    }
+    if ('confirmed' in value) {
+      const c = value.confirmed;
+      if (typeof c === 'boolean') return c ? 'confirmed' : 'pending';
+      if (typeof c === 'string') return c.toLowerCase() === 'true' ? 'confirmed' : 'pending';
+    }
     if ('value' in value && (typeof value.value === 'string' || typeof value.value === 'number')) {
       return String(value.value);
     }
+    if ('symbol' in value && typeof value.symbol === 'string') {
+      return value.symbol;
+    }
+    const keys = Object.keys(value);
+    if (keys.length === 1) return String(keys[0]);
     return fallback;
   }
   return fallback;
@@ -358,9 +369,9 @@ export default function TransactionHistoryPage() {
                           {tx.cryptocurrency || '-'}
                         </span>
                       </div>
-                      <div className="transaction-date">{formatDate(tx.timestamp, i18n.language)}</div>
-                      {tx.txHash && (
-                        <div className="transaction-hash">{tx.txHash.slice(0, 16)}...</div>
+                      <div className="transaction-date">{formatDate(normalizePrimitive(tx.timestamp, ''), i18n.language)}</div>
+                      {normalizePrimitive(tx.txHash, '') && (
+                        <div className="transaction-hash">{normalizePrimitive(tx.txHash, '').slice(0, 16)}...</div>
                       )}
                     </div>
                   </div>
