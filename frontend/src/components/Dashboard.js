@@ -328,9 +328,6 @@ function Dashboard() {
   const topMetrics = useMemo(() => {
     const metrics = [
       { label: t('dashboard.metrics.totalPortfolio'), value: prices && balances.length > 0 ? formatUsd(totalBalance) : '—' },
-      { label: t('dashboard.metrics.bitcoin'), value: formatUsd(priceMap.BTC) },
-      { label: t('dashboard.metrics.ethereum'), value: formatUsd(priceMap.ETH) },
-      { label: t('dashboard.metrics.usdt'), value: formatUsd(priceMap.USDT) }
     ];
 
     if (recoveryWalletBalance) {
@@ -347,7 +344,7 @@ function Dashboard() {
     }
 
     return metrics;
-  }, [balances.length, priceMap.BTC, priceMap.ETH, priceMap.USDT, prices, totalBalance, recoveryWalletBalance, t]);
+  }, [balances.length, prices, totalBalance, recoveryWalletBalance, t]);
 
   const portfolioRows = useMemo(() => {
     // Aggregate wallets by symbol — combine all BTC wallets into one row, etc.
@@ -571,11 +568,16 @@ function Dashboard() {
             </section>
           )}
 
-          <section className="rw-grid">
-            {topMetrics.map((metric) => (
-              <div key={metric.label} className="rw-card">
-                <h3>{metric.label}</h3>
-                <div className="rw-value">{metric.value}</div>
+          <section style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 4 }}>
+            {topMetrics.map((metric, i) => (
+              <div key={metric.label} className="rw-card" style={i === 0 ? {
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: '#ffffff',
+                borderColor: 'transparent',
+                boxShadow: '0 8px 32px rgba(102,126,234,0.35)',
+              } : {}}>
+                <h3 style={i === 0 ? { color: 'rgba(255,255,255,0.75)' } : {}}>{metric.label}</h3>
+                <div className="rw-value" style={i === 0 ? { color: '#ffffff', fontSize: 36 } : {}}>{metric.value}</div>
               </div>
             ))}
           </section>
