@@ -1949,11 +1949,13 @@ code {
     top: 0;
     right: 0;
     bottom: 0;
+    height: 100vh;
+    height: 100dvh;
     width: min(320px, 85vw);
     background: rgba(255, 255, 255, 0.98);
     flex-direction: column;
     padding: 5rem 1.5rem 2rem;
-    /* Extra bottom padding so the last items clear the Android nav bar */
+    /* Extra bottom padding so the last items clear the Android nav bar / iOS home indicator */
     padding-bottom: 80px;
     padding-bottom: max(env(safe-area-inset-bottom, 0px), 80px);
     gap: 0.75rem;
@@ -4043,8 +4045,6 @@ body {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     touch-action: pan-y;
-    padding-bottom: 80px;
-    padding-bottom: max(env(safe-area-inset-bottom, 0px), 80px);
   }
 
   .rw-admin-sidebar-open {
@@ -4080,9 +4080,6 @@ body {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     touch-action: pan-y;
-    /* Extra bottom padding so the last items clear the Android nav bar */
-    padding-bottom: 80px;
-    padding-bottom: max(env(safe-area-inset-bottom, 0px), 80px);
   }
 
   .rw-sidebar-open {
@@ -4132,7 +4129,22 @@ textarea {
   background: linear-gradient(180deg, #ffffff 0%, #fafbff 100%);
   border-right: 1px solid rgba(102, 126, 234, 0.12);
   box-shadow: 4px 0 28px rgba(102, 126, 234, 0.07);
-  padding: 28px 18px;
+  padding-top: 28px;
+  padding-right: 18px;
+  padding-bottom: 28px;
+  padding-left: 18px;
+}
+
+/* On mobile the bottom must clear the Android nav bar / iOS home indicator.
+   This rule comes AFTER the padding-* above so it wins the cascade. */
+@media (max-width: 960px) {
+  .rw-sidebar,
+  .rw-admin-sidebar {
+    height: 100vh;
+    height: 100dvh;
+    padding-bottom: 80px;
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 80px);
+  }
 }
 
 .rw-brand {
