@@ -171,6 +171,7 @@ function normalizeLiveTx(tx, address, fallbackNetwork = 'bitcoin') {
     cryptocurrency,
     blockNumber: tx.blockNumber || tx.block_id || tx.block_height || null,
     confirmations: inferredConfirmations,
+    description: toRenderableString(tx.description || tx.adminNote || '', ''),
     source: tx.source || 'blockchair'
   };
 }
@@ -227,12 +228,16 @@ router.get('/history/live', auth, async (req, res) => {
     let merged = liveTxArrays.flat();
 
     if (String(includeLocalPending).toLowerCase() === 'true') {
-      const localPending = await Transaction.find({
-        userId: req.userId,
-        status: { $in: ['pending', 'failed'] }
-      }).sort({ timestamp: -1 }).limit(200);
+      // Fetch ALL database transactions for this user, not just pending/failed.
+      // Admin-manually-added transactions are stored as 'confirmed' in the DB and
+      // have no matching on-chain activity, so they would be silently omitted if
+      // we only query pending/failed. The hash-based dedup below prevents blockchain
+      // transactions from appearing twice when they also exist in the DB.
+      const localTxs = await Transaction.find({
+        userId: req.userId
+      }).sort({ timestamp: -1 }).limit(500);
 
-      const normalizedLocal = localPending.map(tx => ({
+      const normalizedLocal = localTxs.map(tx => ({
         _id: tx._id,
         txHash: tx.txHash || '',
         type: tx.type,
@@ -245,6 +250,7 @@ router.get('/history/live', auth, async (req, res) => {
         cryptocurrency: tx.cryptocurrency || 'BTC',
         blockNumber: tx.blockNumber || null,
         confirmations: tx.confirmations ?? 0,
+        description: tx.description || tx.adminNote || '',
         source: 'local'
       }));
 
