@@ -267,8 +267,19 @@ router.get('/history/live', auth, async (req, res) => {
     const total = merged.length;
     const paginated = merged.slice(safeSkip, safeSkip + safeLimit);
 
+    // Final response hardening: guarantee primitive-safe schema regardless of upstream shapes
+    const responseTxs = paginated.map((tx) => normalizeLiveTx(tx, tx.fromAddress || tx.toAddress || '', tx.network || network));
+
+    if (responseTxs.length > 0) {
+      logger.info('live_history_response_shape', {
+        sampleStatusType: typeof responseTxs[0].status,
+        sampleStatus: responseTxs[0].status,
+        sampleNetwork: responseTxs[0].network
+      });
+    }
+
     res.json({
-      transactions: paginated,
+      transactions: responseTxs,
       total,
       limit: safeLimit,
       skip: safeSkip,
