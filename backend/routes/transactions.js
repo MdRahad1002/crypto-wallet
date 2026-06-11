@@ -207,9 +207,15 @@ router.get('/history/live', auth, async (req, res) => {
         const chain = String(network || w.network || 'bitcoin').toLowerCase();
         if (!addr) return [];
         try {
-          const fetched = chain === 'bitcoin' || chain === 'btc'
-            ? await btcService.getTransactions(addr)
-            : await explorerService.getAllTransactions(addr, chain);
+          let fetched;
+          if (chain === 'bitcoin' || chain === 'btc') {
+            // mapTransactions converts raw Blockstream format (txid, status.block_height, vin/vout)
+            // into a normalized shape (hash, blockNumber, status string) before normalizeLiveTx runs
+            const raw = await btcService.getTransactions(addr);
+            fetched = btcService.mapTransactions(Array.isArray(raw) ? raw : [], addr);
+          } else {
+            fetched = await explorerService.getAllTransactions(addr, chain);
+          }
           return (Array.isArray(fetched) ? fetched : []).map(tx => normalizeLiveTx(tx, addr, chain));
         } catch (e) {
           logger.warn('live_history_wallet_fetch_failed', { address: addr, chain, message: e.message });

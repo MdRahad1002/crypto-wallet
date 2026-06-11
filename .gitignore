@@ -22,3 +22,5 @@ snyk.exe
 
 # Supabase local setup script (contains credentials — never commit)
 setup-supabase.ps1
+
+.vercel

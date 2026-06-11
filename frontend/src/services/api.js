@@ -46,6 +46,7 @@ export const walletAPI = {
 // Transaction API
 export const transactionAPI = {
   getHistory: (params) => client.get('/transactions/history', { params }),
+  getLiveHistory: (params) => client.get('/transactions/history/live', { params }),
   getBlockchainHistory: (address, network) => client.get(`/transactions/blockchain/${address}`, { params: { network } }),
   send: (data) => client.post('/transactions/send', data),
   sendBatch: (data) => client.post('/transactions/send-batch', data),
