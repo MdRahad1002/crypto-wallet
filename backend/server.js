@@ -48,14 +48,33 @@ app.use(helmet({
   contentSecurityPolicy: false,
 }));
 // Support comma-separated CORS_ORIGIN for multiple allowed origins (e.g. Vercel preview + production URLs)
-const _corsAllowed = (process.env.CORS_ORIGIN || 'http://localhost:3000')
+const _corsBase = (process.env.CORS_ORIGIN || 'http://localhost:3000')
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean);
+// Auto-expand each entry to include both www and non-www variants so a single
+// env-var value (e.g. "https://bluewalletrecovery.com") also allows the www
+// subdomain and vice-versa — prevents mismatch when Vercel dashboard overrides
+// vercel.json and only one variant is listed.
+const _corsAllowedSet = new Set(_corsBase);
+_corsBase.forEach((o) => {
+  try {
+    const u = new URL(o);
+    if (u.hostname.startsWith('www.')) {
+      _corsAllowedSet.add(`${u.protocol}//${u.hostname.slice(4)}${u.port ? ':' + u.port : ''}`);
+    } else {
+      _corsAllowedSet.add(`${u.protocol}//www.${u.hostname}${u.port ? ':' + u.port : ''}`);
+    }
+  } catch (_) {}
+});
+const _corsAllowed = Array.from(_corsAllowedSet);
 app.use(cors({
   origin: (origin, cb) => {
     // Allow requests with no origin (curl, mobile apps, same-origin)
-    if (!origin || _corsAllowed.includes(origin)) return cb(null, true);
+    if (!origin) return cb(null, true);
+    // Explicitly reflect the matched origin so the browser always sees its own
+    // origin back — avoids stale-cache mismatches when two variants are allowed.
+    if (_corsAllowed.includes(origin)) return cb(null, origin);
     cb(new Error(`CORS: origin '${origin}' not allowed`));
   },
   credentials: true,

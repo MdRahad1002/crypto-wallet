@@ -59,10 +59,14 @@ function autoRefreshCookieTTL(req, res, next) {
     // Refresh token TTL
     if (refreshToken) {
       const maxAge = REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60 * 1000;
+      const isProd = process.env.NODE_ENV === 'production';
       setSecureCookie(res, 'refreshToken', refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: isProd,
+        // Cross-origin (frontend on bluewalletrecovery.com → API on vercel.app)
+        // requires SameSite=None; Strict would silently drop the cookie on every
+        // cross-site request and cause 401s on token refresh.
+        sameSite: isProd ? 'none' : 'strict',
         path: '/api/auth',
         maxAge
       });
@@ -75,10 +79,11 @@ function autoRefreshCookieTTL(req, res, next) {
 
     // Refresh CSRF token TTL
     if (csrfToken) {
+      const isProd = process.env.NODE_ENV === 'production';
       setSecureCookie(res, 'csrfToken', csrfToken, {
         httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: isProd,
+        sameSite: isProd ? 'none' : 'strict',
         path: '/',
         maxAge: 30 * 60 * 1000 // 30 minutes
       });
@@ -176,7 +181,7 @@ function validateCookieSameSite(req, res, next) {
 const COOKIE_DEFAULTS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
   path: '/',
   domain: process.env.COOKIE_DOMAIN || undefined
 };
