@@ -10,7 +10,12 @@ const PAGE_SIZE = 20;
 
 function formatDate(ts, lng) {
   if (!ts) return '-';
-  const d = new Date(ts);
+  // normalizePrimitive may have converted the numeric ms timestamp to a string
+  // ("1709123456000"). new Date(string-of-digits) returns Invalid Date in most
+  // browsers — parse it as a number first.
+  const numeric = Number(ts);
+  const d = new Date(Number.isFinite(numeric) && numeric > 0 ? numeric : ts);
+  if (isNaN(d.getTime())) return '-';
   return d.toLocaleString(lng === 'de' ? 'de-DE' : 'en-US', {
     day: 'numeric', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
