@@ -570,7 +570,7 @@ function Dashboard() {
 
           <section style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 4 }}>
             {topMetrics.map((metric, i) => (
-              <div key={metric.label} className="rw-card" style={i === 0 ? {
+              <div key={metric.label} className={`rw-card${i === 0 ? ' rw-balance-hero' : ''}`} style={i === 0 ? {
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 color: '#ffffff',
                 borderColor: 'transparent',
@@ -791,6 +791,45 @@ function Dashboard() {
             </section>
           )}
         </main>
+
+        {/* Mobile Bottom Navigation */}
+        <nav className="rw-bottom-nav">
+          <a href="#dashboard" className="rw-bottom-nav-item active" onClick={closeMobileMenu}>
+            <span className="rw-bottom-nav-icon">
+              <Icon name="home" size={20} />
+            </span>
+            {t('dashboard.nav.dashboard')}
+          </a>
+          <Link to="/transactions" className="rw-bottom-nav-item" onClick={closeMobileMenu}>
+            <span className="rw-bottom-nav-icon">
+              <Icon name="list" size={20} />
+            </span>
+            {t('dashboard.nav.transactions')}
+          </Link>
+          <button
+            type="button"
+            className="rw-bottom-nav-item rw-bottom-nav-send"
+            onClick={() => { setShowSendModal(true); closeMobileMenu(); }}
+            disabled={wallets.length === 0}
+          >
+            <span className="rw-bottom-nav-icon">
+              <Icon name="arrowUp" size={18} />
+            </span>
+            {t('dashboard.actions.send')}
+          </button>
+          <button type="button" className="rw-bottom-nav-item" onClick={() => { handleRecover(); closeMobileMenu(); }}>
+            <span className="rw-bottom-nav-icon">
+              <Icon name="shield" size={20} />
+            </span>
+            {t('dashboard.nav.recoverWallet')}
+          </button>
+          <Link to="/support" className="rw-bottom-nav-item" onClick={closeMobileMenu}>
+            <span className="rw-bottom-nav-icon">
+              <Icon name="helpCircle" size={20} />
+            </span>
+            {t('dashboard.nav.support')}
+          </Link>
+        </nav>
       </div>
 
       {showCreateWallet && (

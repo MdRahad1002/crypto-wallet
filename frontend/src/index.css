@@ -4737,3 +4737,378 @@ textarea {
   box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
   animation: pulse 2s ease-in-out infinite;
 }
+
+/* ================================================================
+   MOBILE EXPERIENCE ENHANCEMENTS
+   ================================================================ */
+
+/* ── Fixed Bottom Navigation (hidden on desktop) ── */
+.rw-bottom-nav {
+  display: none;
+}
+
+/* ── Mobile layout adjustments (≤960px — sidebar slides out) ── */
+@media (max-width: 960px) {
+  /* Stack header elements vertically */
+  .rw-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+
+  .rw-header h1,
+  .rw-admin-header h1 {
+    font-size: 22px;
+    letter-spacing: -0.4px;
+  }
+
+  .rw-user-box {
+    font-size: 11.5px;
+    background: rgba(102, 126, 234, 0.07);
+    padding: 5px 12px;
+    border-radius: 20px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Reduce card padding on tablet/mobile */
+  .rw-card,
+  .rw-admin-card {
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  /* Actions — 2-column grid on mobile */
+  .rw-actions-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .rw-actions-wrap .rw-btn {
+    min-height: 48px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Alert banner — stack button below text on mobile */
+  .rw-alert-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .rw-alert-row .rw-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  /* Show bottom nav */
+  .rw-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid rgba(102, 126, 234, 0.12);
+    padding: 8px 12px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    z-index: 800;
+    box-shadow: 0 -4px 24px rgba(102, 126, 234, 0.1);
+    align-items: flex-end;
+    justify-content: space-around;
+    gap: 2px;
+  }
+
+  .rw-bottom-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 4px;
+    cursor: pointer;
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    text-decoration: none;
+    background: transparent;
+    border: none;
+    font-family: inherit;
+    transition: color 0.18s ease;
+    line-height: 1;
+    text-align: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .rw-bottom-nav-item.active {
+    color: #667eea;
+  }
+
+  .rw-bottom-nav-item:active {
+    opacity: 0.65;
+  }
+
+  .rw-bottom-nav-icon {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    transition: background 0.18s ease;
+    margin-bottom: 1px;
+  }
+
+  .rw-bottom-nav-item.active .rw-bottom-nav-icon {
+    background: rgba(102, 126, 234, 0.12);
+  }
+
+  /* Send button — prominent pill in center */
+  .rw-bottom-nav-send {
+    flex: 0 0 auto;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white !important;
+    border-radius: 22px;
+    padding: 12px 20px;
+    margin: 0 6px;
+    gap: 7px;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.42);
+    font-size: 13.5px;
+    font-weight: 700;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 2px;
+    letter-spacing: -0.1px;
+  }
+
+  .rw-bottom-nav-send .rw-bottom-nav-icon {
+    background: transparent !important;
+    width: 20px;
+    height: 20px;
+    border-radius: 0;
+    margin-bottom: 0;
+  }
+
+  /* Pad main content so it clears the bottom nav */
+  .rw-main {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* ── Smaller phones (≤640px) ── */
+@media (max-width: 640px) {
+  .rw-main {
+    padding: 60px 12px calc(84px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .rw-header h1 {
+    font-size: 20px;
+  }
+
+  .rw-card,
+  .rw-admin-card {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .rw-value {
+    font-size: 20px;
+  }
+
+  /* Hero balance card — keep big on small screens */
+  .rw-balance-hero {
+    padding: 22px 18px !important;
+  }
+
+  .rw-balance-hero .rw-value {
+    font-size: 32px !important;
+  }
+
+  .rw-balance-hero h3 {
+    font-size: 10px !important;
+  }
+
+  .rw-actions-wrap {
+    gap: 8px;
+  }
+
+  .rw-actions-wrap .rw-btn {
+    font-size: 12px;
+    min-height: 46px;
+    padding: 10px 8px;
+    border-radius: 10px;
+  }
+
+  .rw-portfolio-row {
+    font-size: 13px;
+    padding: 12px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* Hide middle column (crypto amount) on small phones — show label + USD only */
+  .rw-portfolio-row span:nth-child(2) {
+    display: none;
+  }
+
+  .rw-section-header h3 {
+    font-size: 14px;
+  }
+
+  .rw-muted {
+    font-size: 12px;
+  }
+
+  .rw-chart-switch .rw-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    min-height: 34px;
+  }
+
+  .rw-transaction-item {
+    padding: 12px 14px;
+    border-radius: 12px;
+    gap: 12px;
+  }
+
+  .rw-transaction-type {
+    font-size: 0.88rem;
+  }
+
+  .rw-transaction-date {
+    font-size: 0.78rem;
+  }
+
+  .rw-transaction-value {
+    font-size: 13px;
+  }
+
+  .rw-bottom-nav-item {
+    font-size: 9.5px;
+  }
+
+  .rw-bottom-nav-send {
+    padding: 11px 16px;
+    font-size: 13px;
+  }
+
+  .rw-notification {
+    padding: 12px 14px;
+    border-radius: 12px;
+  }
+
+  .rw-notification-message {
+    font-size: 0.88rem;
+  }
+
+  .rw-admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rw-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── TransactionHistoryPage mobile (gradient bg pages) ── */
+@media (max-width: 768px) {
+  /* Reduce overall padding */
+  .dashboard {
+    padding: 1.25rem 1rem 1.5rem;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  /* Smaller h1 on mobile */
+  .dashboard-header h1[style] {
+    font-size: 1.75rem !important;
+    letter-spacing: -0.6px !important;
+  }
+
+  /* Stack filter bar */
+  .dashboard .card > div[style] {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  /* Transaction item – keep row layout but reduce padding */
+  .transaction-item {
+    padding: 0.9rem 1rem;
+    gap: 0.75rem;
+  }
+
+  .transaction-type {
+    font-size: 0.92rem;
+  }
+
+  .transaction-amount {
+    font-size: 1rem !important;
+  }
+
+  .transaction-list {
+    padding: 1.25rem;
+    border-radius: 16px;
+  }
+
+  .transaction-list-title {
+    font-size: 1.35rem !important;
+  }
+
+  /* Action buttons row on tx page */
+  .dashboard-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .dashboard-actions .btn {
+    flex: 1;
+    min-width: 80px;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.82rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard {
+    padding: 1rem 0.75rem 1.5rem;
+  }
+
+  .dashboard-header h1[style] {
+    font-size: 1.5rem !important;
+  }
+
+  .transaction-list {
+    padding: 1rem;
+    border-radius: 14px;
+  }
+
+  .transaction-item {
+    padding: 0.8rem 0.85rem;
+  }
+
+  /* Expanded detail panel on mobile */
+  .transaction-item + div[style] {
+    border-radius: 12px !important;
+    padding: 1rem !important;
+    grid-template-columns: 1fr !important;
+  }
+}
