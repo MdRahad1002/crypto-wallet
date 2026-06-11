@@ -1,8 +1,9 @@
 const axios = require('axios');
 
-// Binance public klines API — no API key required, high rate limits, works from cloud IPs.
-// Symbol map: coinId → Binance trading pair
-const BINANCE_SYMBOL = { bitcoin: 'BTCUSDT', ethereum: 'ETHUSDT', tether: null };
+// Binance public klines API — high rate limits but blocked on some US cloud IPs
+const BINANCE_SYMBOL      = { bitcoin: 'BTCUSDT', ethereum: 'ETHUSDT', tether: null };
+// CryptoCompare — already used for live prices, reliable from Vercel cloud IPs
+const CRYPTOCOMPARE_SYMBOL = { bitcoin: 'BTC',     ethereum: 'ETH',     tether: null };
 
 const cache = new Map();
 
@@ -19,15 +20,10 @@ function setCache(key, data, ttlMs) {
 
 const REQUEST_TIMEOUT = 8000;
 
-/**
- * Fetch OHLCV from Binance public klines endpoint.
- * Returns CoinGecko-compatible { prices: [[ts, price]] }.
- */
 async function fetchFromBinance(coinId, days) {
   const symbol = BINANCE_SYMBOL[coinId];
   if (!symbol) throw new Error(`No Binance symbol for ${coinId}`);
 
-  // Use 1-hour candles for 7-day view, 1-day candles for 30-day view
   const interval = days <= 7 ? '1h' : '1d';
   const limit    = days <= 7 ? days * 24 : days;
 
@@ -38,6 +34,33 @@ async function fetchFromBinance(coinId, days) {
 
   // Binance kline: [openTime, open, high, low, close, ...]
   const prices = res.data.map(k => [k[0], parseFloat(k[4])]);
+  if (!prices.length) throw new Error('Binance returned empty data');
+  return { prices };
+}
+
+/**
+ * CryptoCompare histohour / histoday — no API key required, works from cloud IPs.
+ * Already used for live price cards so we know it's reachable from Vercel.
+ */
+async function fetchFromCryptoCompare(coinId, days) {
+  const symbol = CRYPTOCOMPARE_SYMBOL[coinId];
+  if (!symbol) throw new Error(`No CryptoCompare symbol for ${coinId}`);
+
+  const endpoint = days <= 7 ? 'histohour' : 'histoday';
+  const limit    = days <= 7 ? days * 24    : days;
+
+  const res = await axios.get(`https://min-api.cryptocompare.com/data/v2/${endpoint}`, {
+    params: { fsym: symbol, tsym: 'USD', limit },
+    timeout: REQUEST_TIMEOUT,
+  });
+
+  if (res.data?.Response !== 'Success') throw new Error('CryptoCompare non-success response');
+
+  const prices = (res.data?.Data?.Data || [])
+    .map(k => [k.time * 1000, parseFloat(k.close)])
+    .filter(([, p]) => p > 0);
+
+  if (!prices.length) throw new Error('CryptoCompare returned empty data');
   return { prices };
 }
 
@@ -53,16 +76,24 @@ async function getUsdMarketChart(coinId, days) {
     return data;
   }
 
+  // 1st choice: Binance (best resolution, but blocked on some US cloud IPs)
   try {
     const data = await fetchFromBinance(coinId, days);
     setCache(key, data, 5 * 60 * 1000);
     return data;
-  } catch (_err) {
-    // Binance unavailable — return demo data so the chart always renders
-    const demo = generateDemoData(coinId, days);
-    setCache(key, demo, 60 * 1000);
-    return demo;
-  }
+  } catch (_) {}
+
+  // 2nd choice: CryptoCompare (already works for live prices on this deployment)
+  try {
+    const data = await fetchFromCryptoCompare(coinId, days);
+    setCache(key, data, 5 * 60 * 1000);
+    return data;
+  } catch (_) {}
+
+  // Last resort: random-walk demo centred on a plausible current price
+  const demo = generateDemoData(coinId, days);
+  setCache(key, demo, 60 * 1000);
+  return demo;
 }
 
 function generateTetherData(days) {
@@ -76,12 +107,11 @@ function generateTetherData(days) {
   return { prices };
 }
 
-/**
- * Random-walk fallback used when Binance is unreachable.
- */
 function generateDemoData(coinId, days) {
-  const BASE_PRICES = { bitcoin: 95000, ethereum: 3200 };
-  const VOLATILITY  = { bitcoin: 0.018,  ethereum: 0.022  };
+  // Keep these in sync with reality — only used when both Binance and
+  // CryptoCompare are unreachable, which should be extremely rare.
+  const BASE_PRICES = { bitcoin: 62000, ethereum: 2400 };
+  const VOLATILITY  = { bitcoin: 0.018,  ethereum: 0.022 };
 
   const basePrice  = BASE_PRICES[coinId] ?? 100;
   const volatility = VOLATILITY[coinId]  ?? 0.015;
