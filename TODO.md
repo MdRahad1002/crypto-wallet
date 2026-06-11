@@ -1,7 +1,5 @@
-# TODO - Real-time Blockchair Transaction History
-
-- [x] Add backend live transaction history endpoint in `backend/routes/transactions.js`
-- [x] Add frontend API method `getLiveHistory` in `frontend/src/services/api.js`
-- [x] Update `frontend/src/components/TransactionHistoryPage.js` to use live history endpoint
-- [x] Mark progress in this TODO after each completed step
-- [x] Run sanity checks for backend/frontend integration
+- [x] Harden frontend transaction history loading against race conditions
+- [x] Stabilize frontend transaction keys and reduce double-normalization
+- [x] Harden backend /transactions/history/live normalization, dedupe, and sorting
+- [ ] Patch object-status rendering crash for transaction history (backend + frontend guard)
+- [ ] Run targeted validation checks (lint/tests where possible) and summarize

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { transactionAPI } from '../services/api';
@@ -128,8 +128,24 @@ export default function TransactionHistoryPage() {
   const [lastUpdated, setLastUpdated]   = useState(new Date());
   const [autoRefresh, setAutoRefresh]   = useState(true);
   const [refreshing, setRefreshing]     = useState(false);
+  const latestRequestRef = useRef(0);
+
+  const makeStableTxId = useCallback((tx, idx = 0) => {
+    const hash = normalizePrimitive(tx?.txHash, '').trim().toLowerCase();
+    if (hash) return `h:${hash}`;
+    const id = normalizePrimitive(tx?._id, '').trim();
+    if (id) return `i:${id}`;
+    const ts = normalizePrimitive(tx?.timestamp, '0');
+    const net = normalizePrimitive(tx?.network, '-').toLowerCase();
+    const from = normalizePrimitive(tx?.fromAddress, '-').toLowerCase();
+    const to = normalizePrimitive(tx?.toAddress, '-').toLowerCase();
+    const amt = Number(tx?.amount || 0);
+    const type = normalizePrimitive(tx?.type, 'transaction').toLowerCase();
+    return `f:${net}|${type}|${ts}|${from}|${to}|${amt}|${idx}`;
+  }, []);
 
   const load = useCallback(async (p, type, status, isAutoRefresh = false) => {
+    const requestId = ++latestRequestRef.current;
     if (!isAutoRefresh) setLoading(true);
     else setRefreshing(true);
     setError('');
@@ -138,16 +154,30 @@ export default function TransactionHistoryPage() {
       if (type)   params.type   = type;
       if (status) params.status = status;
       const { data } = await transactionAPI.getLiveHistory(params);
-      setTxs((data.transactions || []).map(normalizeTx));
-      setTotal(data.total || 0);
+      if (requestId !== latestRequestRef.current) return;
+
+      const normalized = (data.transactions || []).map((tx, idx) => {
+        const safe = normalizeTx(tx);
+        return {
+          ...safe,
+          stableId: makeStableTxId(safe, idx),
+        };
+      });
+
+      setTxs(normalized);
+      setTotal(Number(data.total || 0));
       setLastUpdated(new Date());
     } catch (_) {
-      if (!isAutoRefresh) setError(t('transactions.loadFailed'));
+      if (requestId === latestRequestRef.current && !isAutoRefresh) {
+        setError(t('transactions.loadFailed'));
+      }
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (requestId === latestRequestRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
-  }, [t]);
+  }, [t, makeStableTxId]);
 
   // Initial load and real-time polling setup
   useEffect(() => {
@@ -181,33 +211,32 @@ export default function TransactionHistoryPage() {
     setSearch(searchInput.trim().toLowerCase());
   };
 
-  const displayed = (search
-    ? txs.filter(tx =>
-        (normalizePrimitive(tx.txHash, '').toLowerCase().includes(search)) ||
-        (normalizePrimitive(tx.fromAddress, '').toLowerCase().includes(search)) ||
-        (normalizePrimitive(tx.toAddress, '').toLowerCase().includes(search)) ||
-        (normalizePrimitive(tx.cryptocurrency, '').toLowerCase().includes(search))
-      )
-    : txs
-  ).map((tx, idx) => {
-    const safe = normalizeTx(tx);
-    const safeTimestamp = normalizePrimitive(tx?.timestamp, '');
-    return {
-      ...safe,
-      _id: normalizePrimitive(tx?._id, `tx-${idx}`),
+  const displayed = useMemo(() => {
+    const base = search
+      ? txs.filter(tx =>
+          (normalizePrimitive(tx.txHash, '').toLowerCase().includes(search)) ||
+          (normalizePrimitive(tx.fromAddress, '').toLowerCase().includes(search)) ||
+          (normalizePrimitive(tx.toAddress, '').toLowerCase().includes(search)) ||
+          (normalizePrimitive(tx.cryptocurrency, '').toLowerCase().includes(search))
+        )
+      : txs;
+
+    return base.map((tx, idx) => ({
+      ...tx,
+      _id: normalizePrimitive(tx?.stableId, makeStableTxId(tx, idx)),
       txHash: normalizePrimitive(tx?.txHash, ''),
       fromAddress: normalizePrimitive(tx?.fromAddress, ''),
       toAddress: normalizePrimitive(tx?.toAddress, ''),
       network: normalizePrimitive(tx?.network, '-'),
       cryptocurrency: normalizePrimitive(tx?.cryptocurrency, '-'),
-      timestamp: safeTimestamp,
+      timestamp: normalizePrimitive(tx?.timestamp, ''),
       blockNumber: normalizePrimitive(tx?.blockNumber, normalizePrimitive(tx?.block_height, '-')),
       confirmations: normalizePrimitive(tx?.confirmations, '-'),
       amount: Number(tx?.amount || 0),
       status: normalizePrimitive(tx?.status, 'pending').toLowerCase(),
       type: normalizePrimitive(tx?.type, 'transaction').toLowerCase(),
-    };
-  });
+    }));
+  }, [txs, search, makeStableTxId]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -413,11 +442,11 @@ export default function TransactionHistoryPage() {
                     gap: '0.75rem 1.5rem', animation: 'fadeInUp 0.3s ease-out',
                   }}>
                     {[
-                      [t('transactions.network'),       tx.network       || '-'],
+                      [t('transactions.network'),       normalizePrimitive(tx.network, '-')],
                       [t('transactions.block'),         String(tx.blockNumber || '-')],
                       [t('transactions.confirmations'), tx.confirmations != null ? String(tx.confirmations) : '-'],
-                      [t('transactions.from'), tx.fromAddress ? shortAddr(tx.fromAddress) : '-'],
-                      [t('transactions.to'),   tx.toAddress   ? shortAddr(tx.toAddress)   : '-'],
+                      [t('transactions.from'), normalizePrimitive(tx.fromAddress, '') ? shortAddr(normalizePrimitive(tx.fromAddress, '')) : '-'],
+                      [t('transactions.to'),   normalizePrimitive(tx.toAddress, '')   ? shortAddr(normalizePrimitive(tx.toAddress, ''))   : '-'],
                     ].map(([label, val]) => (
                       <div key={label}>
                         <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 3 }}>
@@ -428,18 +457,18 @@ export default function TransactionHistoryPage() {
                         </div>
                       </div>
                     ))}
-                    {tx.txHash && (
+                    {normalizePrimitive(tx.txHash, '') && (
                       <div style={{ gridColumn: '1 / -1' }}>
                         <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 3 }}>
                           {t('transactions.txHash')}
                         </div>
                         <button
                           onClick={() => {
-                            const safeUrl = blockExplorerUrl(tx.network, tx.txHash);
+                            const safeUrl = blockExplorerUrl(normalizePrimitive(tx.network, '-'), normalizePrimitive(tx.txHash, ''));
                             if (safeUrl !== '#') window.open(safeUrl, '_blank', 'noopener,noreferrer');
                           }}
                           style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--primary-blue)', fontFamily: "'SF Mono','Courier New',monospace", fontSize: '0.82rem', wordBreak: 'break-all', textAlign: 'left' }}>
-                          {tx.txHash}
+                          {normalizePrimitive(tx.txHash, '')}
                         </button>
                       </div>
                     )}

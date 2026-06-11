@@ -60,53 +60,117 @@ function toRenderableString(value, fallback = '') {
   return fallback;
 }
 
+function toEpochMs(value) {
+  if (value == null) return 0;
+  if (value instanceof Date) {
+    const ms = value.getTime();
+    return Number.isFinite(ms) ? ms : 0;
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return 0;
+    return value < 1e12 ? Math.floor(value * 1000) : Math.floor(value);
+  }
+  if (typeof value === 'string') {
+    const n = Number(value);
+    if (Number.isFinite(n)) return n < 1e12 ? Math.floor(n * 1000) : Math.floor(n);
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function normalizeStatus(txStatus, confirmations) {
+  if (txStatus && typeof txStatus === 'object') {
+    if (typeof txStatus.confirmed === 'boolean') return txStatus.confirmed ? 'confirmed' : 'pending';
+    if (typeof txStatus.confirmed === 'string') return txStatus.confirmed.toLowerCase() === 'true' ? 'confirmed' : 'pending';
+    if (typeof txStatus.status === 'string') {
+      const nested = txStatus.status.toLowerCase().trim();
+      if (['confirmed', 'completed', 'success'].includes(nested)) return 'confirmed';
+      if (['failed', 'error', 'rejected'].includes(nested)) return 'failed';
+    }
+  }
+
+  const s = toRenderableString(txStatus, '').toLowerCase().trim();
+  if (['confirmed', 'completed', 'success'].includes(s)) return 'confirmed';
+  if (['failed', 'error', 'rejected'].includes(s)) return 'failed';
+  const conf = Number(confirmations || 0);
+  return conf > 0 ? 'confirmed' : 'pending';
+}
+
+function normalizeType(rawType, address, fromAddress, toAddress) {
+  let type = toRenderableString(rawType, '').toLowerCase().trim();
+  if (type === 'received') type = 'receive';
+  if (type === 'sent') type = 'send';
+  if (type === 'self') type = 'send';
+  if (['send', 'receive', 'withdraw', 'deposit'].includes(type)) return type;
+
+  const a = toRenderableString(address, '').toLowerCase();
+  const from = toRenderableString(fromAddress, '').toLowerCase();
+  const to = toRenderableString(toAddress, '').toLowerCase();
+
+  if (to && a && to === a && from !== a) return 'receive';
+  if (from && a && from === a && to !== a) return 'send';
+  return 'receive';
+}
+
+function txFingerprint(tx) {
+  const hash = toRenderableString(tx.txHash, '').trim().toLowerCase();
+  if (hash) return `h:${hash}`;
+  return `f:${[
+    toRenderableString(tx.network, '').toLowerCase(),
+    toRenderableString(tx.type, '').toLowerCase(),
+    toRenderableString(tx.fromAddress, '').toLowerCase(),
+    toRenderableString(tx.toAddress, '').toLowerCase(),
+    String(Number(tx.amount || 0)),
+    String(toEpochMs(tx.timestamp)),
+    String(toRenderableString(tx.blockNumber, ''))
+  ].join('|')}`;
+}
+
 function normalizeLiveTx(tx, address, fallbackNetwork = 'bitcoin') {
-  const txHash = toRenderableString(tx.hash || tx.txHash || tx.transaction_hash || '', '');
-  const fromAddress = toRenderableString(tx.fromAddress || tx.from || tx.sender || '', '');
-  const toAddress = toRenderableString(tx.toAddress || tx.to || tx.recipient || '', '');
+  const txHash = toRenderableString(tx.hash || tx.txHash || tx.transaction_hash || '', '').trim();
+  const fromAddress = toRenderableString(tx.fromAddress || tx.from || tx.sender || '', '').trim();
+  const toAddress = toRenderableString(tx.toAddress || tx.to || tx.recipient || '', '').trim();
   const network = toRenderableString(tx.network || fallbackNetwork || 'bitcoin', 'bitcoin').toLowerCase();
   const cryptocurrency = toRenderableString(
     tx.cryptocurrency || (network === 'bitcoin' || network === 'btc' ? 'BTC' : network === 'ethereum' || network === 'eth' ? 'ETH' : network.toUpperCase()),
     'BTC'
   );
 
-  const rawType = toRenderableString(tx.type || tx.direction || '', '').toLowerCase();
-  let type = rawType;
-  if (!type || !['send', 'receive', 'withdraw', 'deposit', 'received', 'sent', 'self'].includes(type)) {
-    const a = toRenderableString(address, '').toLowerCase();
-    const from = toRenderableString(fromAddress, '').toLowerCase();
-    const to = toRenderableString(toAddress, '').toLowerCase();
-    if (to && a && to === a && from !== a) type = 'receive';
-    else if (from && a && from === a && to !== a) type = 'send';
-    else type = 'receive';
-  }
-
-  if (type === 'received') type = 'receive';
-  if (type === 'sent') type = 'send';
-  if (type === 'self') type = 'send';
+  const type = normalizeType(tx.type || tx.direction, address, fromAddress, toAddress);
 
   let amount = 0;
   if (typeof tx.amount === 'number') amount = tx.amount;
   else if (typeof tx.value === 'number') amount = tx.value;
   else if (typeof tx.value === 'string') amount = Number(tx.value) || 0;
 
-  const txStatus = toRenderableString(tx.status, '');
-  const confirmedFlag = typeof tx.confirmed === 'boolean' ? tx.confirmed : undefined;
-  const fallbackStatus = confirmedFlag === true ? 'confirmed' : ((tx.confirmations || 0) > 0 ? 'confirmed' : 'pending');
+  const statusObj = tx && typeof tx.status === 'object' ? tx.status : null;
+  const inferredConfirmations =
+    tx.confirmations != null ? Number(tx.confirmations) || 0
+    : statusObj && typeof statusObj.confirmed === 'boolean' ? (statusObj.confirmed ? 1 : 0)
+    : 0;
+  const status = normalizeStatus(tx.status, inferredConfirmations);
+  const timestamp = toEpochMs(
+    tx.timestamp ||
+    tx.time ||
+    tx.block_time ||
+    (statusObj ? statusObj.block_time : null) ||
+    Date.now()
+  );
 
   return {
-    _id: tx._id || txHash || `${network}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    _id: tx._id || txHash || `${network}-${timestamp}-${Math.random().toString(36).slice(2, 8)}`,
     txHash,
     type,
-    status: (txStatus || fallbackStatus).toLowerCase(),
-    amount,
-    timestamp: tx.timestamp || tx.time || tx.block_time || Date.now(),
+    status,
+    amount: Number(amount || 0),
+    timestamp,
     fromAddress,
     toAddress,
     network,
     cryptocurrency,
     blockNumber: tx.blockNumber || tx.block_id || tx.block_height || null,
-    confirmations: tx.confirmations ?? 0,
+    confirmations: inferredConfirmations,
     source: tx.source || 'blockchair'
   };
 }
@@ -178,17 +242,27 @@ router.get('/history/live', auth, async (req, res) => {
         source: 'local'
       }));
 
-      const seenHashes = new Set(merged.filter(t => t.txHash).map(t => t.txHash.toLowerCase()));
+      const seen = new Set(merged.map(txFingerprint));
       normalizedLocal.forEach(tx => {
-        const key = tx.txHash ? tx.txHash.toLowerCase() : `local-${tx._id}`;
-        if (!seenHashes.has(key)) merged.push(tx);
+        const key = txFingerprint(normalizeLiveTx(tx, tx.fromAddress || tx.toAddress || '', tx.network || 'bitcoin'));
+        if (!seen.has(key)) {
+          merged.push(normalizeLiveTx(tx, tx.fromAddress || tx.toAddress || '', tx.network || 'bitcoin'));
+          seen.add(key);
+        }
       });
     }
 
     if (type) merged = merged.filter(t => String(t.type || '').toLowerCase() === String(type).toLowerCase());
     if (status) merged = merged.filter(t => String(t.status || '').toLowerCase() === String(status).toLowerCase());
 
-    merged.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    merged.sort((a, b) => {
+      const bt = toEpochMs(b.timestamp);
+      const at = toEpochMs(a.timestamp);
+      if (bt !== at) return bt - at;
+      const bh = toRenderableString(b.txHash, '').toLowerCase();
+      const ah = toRenderableString(a.txHash, '').toLowerCase();
+      return bh.localeCompare(ah);
+    });
 
     const total = merged.length;
     const paginated = merged.slice(safeSkip, safeSkip + safeLimit);
