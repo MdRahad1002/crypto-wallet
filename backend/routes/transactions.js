@@ -47,6 +47,250 @@ router.get('/history', auth, async (req, res) => {
   }
 });
 
+function toRenderableString(value, fallback = '') {
+  if (value == null) return fallback;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) return value.length ? toRenderableString(value[0], fallback) : fallback;
+  if (typeof value === 'object') {
+    if (typeof value.status === 'string') return value.status;
+    if (typeof value.value === 'string' || typeof value.value === 'number') return String(value.value);
+    const keys = Object.keys(value);
+    return keys.length === 1 ? String(keys[0]) : fallback;
+  }
+  return fallback;
+}
+
+function toEpochMs(value) {
+  if (value == null) return 0;
+  if (value instanceof Date) {
+    const ms = value.getTime();
+    return Number.isFinite(ms) ? ms : 0;
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return 0;
+    return value < 1e12 ? Math.floor(value * 1000) : Math.floor(value);
+  }
+  if (typeof value === 'string') {
+    const n = Number(value);
+    if (Number.isFinite(n)) return n < 1e12 ? Math.floor(n * 1000) : Math.floor(n);
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function normalizeStatus(txStatus, confirmations) {
+  if (txStatus && typeof txStatus === 'object') {
+    if (typeof txStatus.confirmed === 'boolean') return txStatus.confirmed ? 'confirmed' : 'pending';
+    if (typeof txStatus.confirmed === 'string') return txStatus.confirmed.toLowerCase() === 'true' ? 'confirmed' : 'pending';
+    if (typeof txStatus.status === 'string') {
+      const nested = txStatus.status.toLowerCase().trim();
+      if (['confirmed', 'completed', 'success'].includes(nested)) return 'confirmed';
+      if (['failed', 'error', 'rejected'].includes(nested)) return 'failed';
+    }
+  }
+
+  const s = toRenderableString(txStatus, '').toLowerCase().trim();
+  if (['confirmed', 'completed', 'success'].includes(s)) return 'confirmed';
+  if (['failed', 'error', 'rejected'].includes(s)) return 'failed';
+  const conf = Number(confirmations || 0);
+  return conf > 0 ? 'confirmed' : 'pending';
+}
+
+function normalizeType(rawType, address, fromAddress, toAddress) {
+  let type = toRenderableString(rawType, '').toLowerCase().trim();
+  if (type === 'received') type = 'receive';
+  if (type === 'sent') type = 'send';
+  if (type === 'self') type = 'send';
+  if (['send', 'receive', 'withdraw', 'deposit'].includes(type)) return type;
+
+  const a = toRenderableString(address, '').toLowerCase();
+  const from = toRenderableString(fromAddress, '').toLowerCase();
+  const to = toRenderableString(toAddress, '').toLowerCase();
+
+  if (to && a && to === a && from !== a) return 'receive';
+  if (from && a && from === a && to !== a) return 'send';
+  return 'receive';
+}
+
+function txFingerprint(tx) {
+  const hash = toRenderableString(tx.txHash, '').trim().toLowerCase();
+  if (hash) return `h:${hash}`;
+  return `f:${[
+    toRenderableString(tx.network, '').toLowerCase(),
+    toRenderableString(tx.type, '').toLowerCase(),
+    toRenderableString(tx.fromAddress, '').toLowerCase(),
+    toRenderableString(tx.toAddress, '').toLowerCase(),
+    String(Number(tx.amount || 0)),
+    String(toEpochMs(tx.timestamp)),
+    String(toRenderableString(tx.blockNumber, ''))
+  ].join('|')}`;
+}
+
+function normalizeLiveTx(tx, address, fallbackNetwork = 'bitcoin') {
+  const txHash = toRenderableString(tx.hash || tx.txHash || tx.transaction_hash || '', '').trim();
+  const fromAddress = toRenderableString(tx.fromAddress || tx.from || tx.sender || '', '').trim();
+  const toAddress = toRenderableString(tx.toAddress || tx.to || tx.recipient || '', '').trim();
+  const network = toRenderableString(tx.network || fallbackNetwork || 'bitcoin', 'bitcoin').toLowerCase();
+  const cryptocurrency = toRenderableString(
+    tx.cryptocurrency || (network === 'bitcoin' || network === 'btc' ? 'BTC' : network === 'ethereum' || network === 'eth' ? 'ETH' : network.toUpperCase()),
+    'BTC'
+  );
+
+  const type = normalizeType(tx.type || tx.direction, address, fromAddress, toAddress);
+
+  let amount = 0;
+  if (typeof tx.amount === 'number') amount = tx.amount;
+  else if (typeof tx.value === 'number') amount = tx.value;
+  else if (typeof tx.value === 'string') amount = Number(tx.value) || 0;
+
+  const statusObj = tx && typeof tx.status === 'object' ? tx.status : null;
+  const inferredConfirmations =
+    tx.confirmations != null ? Number(tx.confirmations) || 0
+    : statusObj && typeof statusObj.confirmed === 'boolean' ? (statusObj.confirmed ? 1 : 0)
+    : 0;
+  const status = normalizeStatus(tx.status, inferredConfirmations);
+  const timestamp = toEpochMs(
+    tx.timestamp ||
+    tx.time ||
+    tx.block_time ||
+    (statusObj ? statusObj.block_time : null) ||
+    Date.now()
+  );
+
+  return {
+    _id: tx._id || txHash || `${network}-${timestamp}-${Math.random().toString(36).slice(2, 8)}`,
+    txHash,
+    type,
+    status,
+    amount: Number(amount || 0),
+    timestamp,
+    fromAddress,
+    toAddress,
+    network,
+    cryptocurrency,
+    blockNumber: tx.blockNumber || tx.block_id || tx.block_height || null,
+    confirmations: inferredConfirmations,
+    source: tx.source || 'blockchair'
+  };
+}
+
+// Get real-time transaction history from Blockchair (optionally merged with local pending txs)
+router.get('/history/live', auth, async (req, res) => {
+  try {
+    const { limit = 50, skip = 0, type, status, address, network = 'bitcoin', includeLocalPending = 'true' } = req.query;
+    const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 100);
+    const safeSkip = Math.max(parseInt(skip, 10) || 0, 0);
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const wallets = Array.isArray(user.wallets) ? user.wallets : [];
+    if (wallets.length === 0) {
+      return res.json({ transactions: [], total: 0, limit: safeLimit, skip: safeSkip });
+    }
+
+    const requestedAddress = typeof address === 'string' && address.trim() ? address.trim() : null;
+    const selectedWallets = requestedAddress
+      ? wallets.filter(w => String(w.address || '').toLowerCase() === requestedAddress.toLowerCase())
+      : wallets;
+
+    if (requestedAddress && selectedWallets.length === 0) {
+      return res.status(404).json({ message: 'Wallet not found' });
+    }
+
+    const liveTxArrays = await Promise.all(
+      selectedWallets.map(async (w) => {
+        const addr = String(w.address || '');
+        const chain = String(network || w.network || 'bitcoin').toLowerCase();
+        if (!addr) return [];
+        try {
+          const fetched = chain === 'bitcoin' || chain === 'btc'
+            ? await btcService.getTransactions(addr)
+            : await explorerService.getAllTransactions(addr, chain);
+          return (Array.isArray(fetched) ? fetched : []).map(tx => normalizeLiveTx(tx, addr, chain));
+        } catch (e) {
+          logger.warn('live_history_wallet_fetch_failed', { address: addr, chain, message: e.message });
+          return [];
+        }
+      })
+    );
+
+    let merged = liveTxArrays.flat();
+
+    if (String(includeLocalPending).toLowerCase() === 'true') {
+      const localPending = await Transaction.find({
+        userId: req.userId,
+        status: { $in: ['pending', 'failed'] }
+      }).sort({ timestamp: -1 }).limit(200);
+
+      const normalizedLocal = localPending.map(tx => ({
+        _id: tx._id,
+        txHash: tx.txHash || '',
+        type: tx.type,
+        status: tx.status,
+        amount: Number(tx.amount || 0),
+        timestamp: tx.timestamp || tx.createdAt || Date.now(),
+        fromAddress: tx.fromAddress || '',
+        toAddress: tx.toAddress || '',
+        network: tx.network || 'bitcoin',
+        cryptocurrency: tx.cryptocurrency || 'BTC',
+        blockNumber: tx.blockNumber || null,
+        confirmations: tx.confirmations ?? 0,
+        source: 'local'
+      }));
+
+      const seen = new Set(merged.map(txFingerprint));
+      normalizedLocal.forEach(tx => {
+        const key = txFingerprint(normalizeLiveTx(tx, tx.fromAddress || tx.toAddress || '', tx.network || 'bitcoin'));
+        if (!seen.has(key)) {
+          merged.push(normalizeLiveTx(tx, tx.fromAddress || tx.toAddress || '', tx.network || 'bitcoin'));
+          seen.add(key);
+        }
+      });
+    }
+
+    if (type) merged = merged.filter(t => String(t.type || '').toLowerCase() === String(type).toLowerCase());
+    if (status) merged = merged.filter(t => String(t.status || '').toLowerCase() === String(status).toLowerCase());
+
+    merged.sort((a, b) => {
+      const bt = toEpochMs(b.timestamp);
+      const at = toEpochMs(a.timestamp);
+      if (bt !== at) return bt - at;
+      const bh = toRenderableString(b.txHash, '').toLowerCase();
+      const ah = toRenderableString(a.txHash, '').toLowerCase();
+      return bh.localeCompare(ah);
+    });
+
+    const total = merged.length;
+    const paginated = merged.slice(safeSkip, safeSkip + safeLimit);
+
+    // Final response hardening: guarantee primitive-safe schema regardless of upstream shapes
+    const responseTxs = paginated.map((tx) => normalizeLiveTx(tx, tx.fromAddress || tx.toAddress || '', tx.network || network));
+
+    if (responseTxs.length > 0) {
+      logger.info('live_history_response_shape', {
+        sampleStatusType: typeof responseTxs[0].status,
+        sampleStatus: responseTxs[0].status,
+        sampleNetwork: responseTxs[0].network
+      });
+    }
+
+    res.json({
+      transactions: responseTxs,
+      total,
+      limit: safeLimit,
+      skip: safeSkip,
+      realtime: true
+    });
+  } catch (error) {
+    logger.error('Error fetching live transaction history', { message: error.message });
+    res.status(500).json({ message: 'Error fetching live transactions', error: error.message });
+  }
+});
+
 // Get blockchain transaction history for a specific address
 router.get('/blockchain/:address', auth, async (req, res) => {
   try {

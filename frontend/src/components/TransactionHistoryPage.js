@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { transactionAPI } from '../services/api';
@@ -42,15 +42,62 @@ function TxIcon({ type }) {
   );
 }
 
+function normalizePrimitive(value, fallback = '-') {
+  if (value == null) return fallback;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  if (Array.isArray(value)) return value.length ? normalizePrimitive(value[0], fallback) : fallback;
+  if (typeof value === 'object') {
+    if ('status' in value && (typeof value.status === 'string' || typeof value.status === 'number' || typeof value.status === 'boolean')) {
+      return String(value.status);
+    }
+    if ('confirmed' in value) {
+      const c = value.confirmed;
+      if (typeof c === 'boolean') return c ? 'confirmed' : 'pending';
+      if (typeof c === 'string') return c.toLowerCase() === 'true' ? 'confirmed' : 'pending';
+    }
+    if ('value' in value && (typeof value.value === 'string' || typeof value.value === 'number')) {
+      return String(value.value);
+    }
+    if ('symbol' in value && typeof value.symbol === 'string') {
+      return value.symbol;
+    }
+    // Critical: never let unknown objects reach JSX
+    return fallback;
+  }
+  return fallback;
+}
+
+function normalizeTx(tx) {
+  const type = normalizePrimitive(tx?.type, 'transaction').toLowerCase();
+  const status = normalizePrimitive(tx?.status, 'pending').toLowerCase();
+  const cryptocurrency = normalizePrimitive(tx?.cryptocurrency, '-');
+  const network = normalizePrimitive(tx?.network, '-');
+  return {
+    ...tx,
+    type,
+    status,
+    cryptocurrency,
+    network,
+    txHash: normalizePrimitive(tx?.txHash, ''),
+    fromAddress: normalizePrimitive(tx?.fromAddress, ''),
+    toAddress: normalizePrimitive(tx?.toAddress, ''),
+    amount: Number(tx?.amount || 0),
+    confirmations: tx?.confirmations != null ? Number(tx.confirmations) : null,
+  };
+}
+
 function StatusBadge({ status }) {
   const { t } = useTranslation();
+  const safeStatus = normalizePrimitive(status, 'pending').toLowerCase();
   const map = {
     confirmed: { color: '#27ae60', bg: 'rgba(39,174,96,0.12)',  label: t('transactions.confirmed') },
-    completed:  { color: '#27ae60', bg: 'rgba(39,174,96,0.12)', label: t('transactions.completed') },
-    pending:   { color: '#f39c12', bg: 'rgba(243,156,18,0.12)', label: t('transactions.pending')   },
-    failed:    { color: '#e74c3c', bg: 'rgba(231,76,60,0.12)',  label: t('transactions.failed')    },
+    completed: { color: '#27ae60', bg: 'rgba(39,174,96,0.12)',  label: t('transactions.completed') },
+    pending:   { color: '#f39c12', bg: 'rgba(243,156,18,0.12)', label: t('transactions.pending') },
+    failed:    { color: '#e74c3c', bg: 'rgba(231,76,60,0.12)',  label: t('transactions.failed') },
   };
-  const s = map[status] || { color: 'var(--text-secondary)', bg: 'rgba(128,128,128,0.1)', label: status };
+  const s = map[safeStatus] || { color: 'var(--text-secondary)', bg: 'rgba(128,128,128,0.1)', label: safeStatus };
   return (
     <span style={{
       display: 'inline-block', padding: '3px 10px', borderRadius: 20,
@@ -76,33 +123,87 @@ export default function TransactionHistoryPage() {
   const [search, setSearch]             = useState('');
   const [showExport, setShowExport]     = useState(false);
   const [expandedId, setExpandedId]     = useState(null);
+  
+  // Real-time polling states
+  const [lastUpdated, setLastUpdated]   = useState(new Date());
+  const [autoRefresh, setAutoRefresh]   = useState(true);
+  const [refreshing, setRefreshing]     = useState(false);
+  const latestRequestRef = useRef(0);
 
-  const load = useCallback(async (p, type, status) => {
-    setLoading(true);
+  const makeStableTxId = useCallback((tx, idx = 0) => {
+    const hash = normalizePrimitive(tx?.txHash, '').trim().toLowerCase();
+    if (hash) return `h:${hash}`;
+    const id = normalizePrimitive(tx?._id, '').trim();
+    if (id) return `i:${id}`;
+    const ts = normalizePrimitive(tx?.timestamp, '0');
+    const net = normalizePrimitive(tx?.network, '-').toLowerCase();
+    const from = normalizePrimitive(tx?.fromAddress, '-').toLowerCase();
+    const to = normalizePrimitive(tx?.toAddress, '-').toLowerCase();
+    const amt = Number(tx?.amount || 0);
+    const type = normalizePrimitive(tx?.type, 'transaction').toLowerCase();
+    return `f:${net}|${type}|${ts}|${from}|${to}|${amt}|${idx}`;
+  }, []);
+
+  const load = useCallback(async (p, type, status, isAutoRefresh = false) => {
+    const requestId = ++latestRequestRef.current;
+    if (!isAutoRefresh) setLoading(true);
+    else setRefreshing(true);
     setError('');
     try {
       const params = { limit: PAGE_SIZE, skip: p * PAGE_SIZE };
       if (type)   params.type   = type;
       if (status) params.status = status;
-      const { data } = await transactionAPI.getHistory(params);
-      setTxs(data.transactions || []);
-      setTotal(data.total || 0);
-    } catch (_) {
-      setError(t('transactions.loadFailed'));
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
+      const { data } = await transactionAPI.getLiveHistory(params);
+      if (requestId !== latestRequestRef.current) return;
 
+      const normalized = (data.transactions || []).map((tx, idx) => {
+        const safe = normalizeTx(tx);
+        return {
+          ...safe,
+          stableId: makeStableTxId(safe, idx),
+        };
+      });
+
+      setTxs(normalized);
+      setTotal(Number(data.total || 0));
+      setLastUpdated(new Date());
+    } catch (_) {
+      if (requestId === latestRequestRef.current && !isAutoRefresh) {
+        setError(t('transactions.loadFailed'));
+      }
+    } finally {
+      if (requestId === latestRequestRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    }
+  }, [t, makeStableTxId]);
+
+  // Initial load and real-time polling setup
   useEffect(() => {
     setPage(0);
-    load(0, typeFilter, statusFilter);
+    load(0, typeFilter, statusFilter, false);
   }, [typeFilter, statusFilter, load]);
+
+  // Real-time polling effect
+  useEffect(() => {
+    if (!autoRefresh) return;
+
+    const pollInterval = setInterval(() => {
+      load(page, typeFilter, statusFilter, true);
+    }, 10000); // Poll every 10 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [autoRefresh, page, typeFilter, statusFilter, load]);
 
   const handlePageChange = (p) => {
     setPage(p);
-    load(p, typeFilter, statusFilter);
+    load(p, typeFilter, statusFilter, false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleManualRefresh = () => {
+    load(page, typeFilter, statusFilter, false);
   };
 
   const handleSearch = (e) => {
@@ -110,14 +211,32 @@ export default function TransactionHistoryPage() {
     setSearch(searchInput.trim().toLowerCase());
   };
 
-  const displayed = search
-    ? txs.filter(tx =>
-        (tx.txHash      && tx.txHash.toLowerCase().includes(search)) ||
-        (tx.fromAddress && tx.fromAddress.toLowerCase().includes(search)) ||
-        (tx.toAddress   && tx.toAddress.toLowerCase().includes(search)) ||
-        (tx.cryptocurrency && tx.cryptocurrency.toLowerCase().includes(search))
-      )
-    : txs;
+  const displayed = useMemo(() => {
+    const base = search
+      ? txs.filter(tx =>
+          (normalizePrimitive(tx.txHash, '').toLowerCase().includes(search)) ||
+          (normalizePrimitive(tx.fromAddress, '').toLowerCase().includes(search)) ||
+          (normalizePrimitive(tx.toAddress, '').toLowerCase().includes(search)) ||
+          (normalizePrimitive(tx.cryptocurrency, '').toLowerCase().includes(search))
+        )
+      : txs;
+
+    return base.map((tx, idx) => ({
+      ...tx,
+      _id: normalizePrimitive(tx?.stableId, makeStableTxId(tx, idx)),
+      txHash: normalizePrimitive(tx?.txHash, ''),
+      fromAddress: normalizePrimitive(tx?.fromAddress, ''),
+      toAddress: normalizePrimitive(tx?.toAddress, ''),
+      network: normalizePrimitive(tx?.network, '-'),
+      cryptocurrency: normalizePrimitive(tx?.cryptocurrency, '-'),
+      timestamp: normalizePrimitive(tx?.timestamp, ''),
+      blockNumber: normalizePrimitive(tx?.blockNumber, normalizePrimitive(tx?.block_height, '-')),
+      confirmations: normalizePrimitive(tx?.confirmations, '-'),
+      amount: Number(tx?.amount || 0),
+      status: normalizePrimitive(tx?.status, 'pending').toLowerCase(),
+      type: normalizePrimitive(tx?.type, 'transaction').toLowerCase(),
+    }));
+  }, [txs, search, makeStableTxId]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -138,17 +257,56 @@ export default function TransactionHistoryPage() {
           <h1 style={{ fontSize: '2.75rem', color: 'white', fontWeight: 900, letterSpacing: '-1.5px', textShadow: '0 2px 10px rgba(0,0,0,0.2)', marginBottom: '0.5rem' }}>
             Transaction History
           </h1>
-          <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1.1rem', fontWeight: 500, textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>
-            {total} transaction{total !== 1 ? 's' : ''} total
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1.1rem', fontWeight: 500, textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>
+              {total} transaction{total !== 1 ? 's' : ''} total
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', background: 'rgba(255,255,255,0.08)', padding: '0.5rem 1rem', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)' }}>
+              {autoRefresh && !refreshing && (
+                <>
+                  <span style={{ display: 'inline-block', width: 8, height: 8, background: '#27ae60', borderRadius: '50%', animation: 'pulse 2s ease-in-out infinite' }}></span>
+                  <span>Live</span>
+                </>
+              )}
+              {refreshing && (
+                <>
+                  <span style={{ display: 'inline-block', width: 8, height: 8, background: '#f39c12', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></span>
+                  <span>Updating...</span>
+                </>
+              )}
+              {!autoRefresh && (
+                <>
+                  <span style={{ display: 'inline-block', width: 8, height: 8, background: 'rgba(255,255,255,0.4)', borderRadius: '50%' }}></span>
+                  <span>Last: {lastUpdated.toLocaleTimeString()}</span>
+                </>
+              )}
+            </div>
+          </div>
         </div>
-        {txs.length > 0 && (
-          <div className="dashboard-actions">
-            <button className="btn btn-secondary" onClick={() => setShowExport(true)}>
+        <div className="dashboard-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <button 
+            className={`btn ${autoRefresh ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            title={autoRefresh ? 'Disable auto-refresh' : 'Enable auto-refresh'}
+            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Icon name={autoRefresh ? 'repeat' : 'xCircle'} size={16} />
+            {autoRefresh ? 'Live' : 'Paused'}
+          </button>
+          <button 
+            className="btn btn-secondary"
+            onClick={handleManualRefresh}
+            disabled={loading || refreshing}
+            title="Refresh transactions now"
+            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Icon name="repeat" size={16} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
+            {refreshing ? 'Updating...' : 'Refresh'}
+          </button>
+          {txs.length > 0 && (
+            <button className="btn btn-secondary" onClick={() => setShowExport(true)} style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Icon name="upload" size={18} /> {t('transactions.export')}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Filters card */}
@@ -201,7 +359,7 @@ export default function TransactionHistoryPage() {
         <div className="card" style={{ textAlign: 'center', padding: '2.5rem', border: '1px solid rgba(231,76,60,0.3)' }}>
           <div style={{ marginBottom: '0.75rem' }}><Icon name="alertCircle" size={48} color="var(--danger)" /></div>
           <p style={{ color: 'var(--danger)', fontWeight: 700, fontSize: '1rem', marginBottom: '1.25rem' }}>{error}</p>
-          <button className="btn btn-danger" onClick={() => load(page, typeFilter, statusFilter)}>{t('transactions.retry')}</button>
+          <button className="btn btn-danger" onClick={handleManualRefresh}>{t('transactions.retry')}</button>
         </div>
       )}
 
@@ -245,16 +403,22 @@ export default function TransactionHistoryPage() {
                     <div className="transaction-info">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <span className="transaction-type">
-                          {tx.type === 'receive' ? t('transactions.received') : tx.type === 'send' ? t('transactions.sent') : tx.type === 'withdraw' ? t('transactions.withdrew') : tx.type}
+                          {tx.type === 'receive'
+                            ? t('transactions.received')
+                            : tx.type === 'send'
+                              ? t('transactions.sent')
+                              : tx.type === 'withdraw'
+                                ? t('transactions.withdrew')
+                                : (typeof tx.type === 'string' ? tx.type : 'transaction')}
                         </span>
                         <StatusBadge status={tx.status} />
                         <span style={{ background: 'rgba(102,126,234,0.1)', color: 'var(--primary-blue)', padding: '2px 8px', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700 }}>
                           {tx.cryptocurrency || '-'}
                         </span>
                       </div>
-                      <div className="transaction-date">{formatDate(tx.timestamp, i18n.language)}</div>
-                      {tx.txHash && (
-                        <div className="transaction-hash">{tx.txHash.slice(0, 16)}...</div>
+                      <div className="transaction-date">{formatDate(normalizePrimitive(tx.timestamp, ''), i18n.language)}</div>
+                      {normalizePrimitive(tx.txHash, '') && (
+                        <div className="transaction-hash">{normalizePrimitive(tx.txHash, '').slice(0, 16)}...</div>
                       )}
                     </div>
                   </div>
@@ -278,11 +442,11 @@ export default function TransactionHistoryPage() {
                     gap: '0.75rem 1.5rem', animation: 'fadeInUp 0.3s ease-out',
                   }}>
                     {[
-                      [t('transactions.network'),       tx.network       || '-'],
+                      [t('transactions.network'),       normalizePrimitive(tx.network, '-')],
                       [t('transactions.block'),         String(tx.blockNumber || '-')],
                       [t('transactions.confirmations'), tx.confirmations != null ? String(tx.confirmations) : '-'],
-                      [t('transactions.from'), tx.fromAddress ? shortAddr(tx.fromAddress) : '-'],
-                      [t('transactions.to'),   tx.toAddress   ? shortAddr(tx.toAddress)   : '-'],
+                      [t('transactions.from'), normalizePrimitive(tx.fromAddress, '') ? shortAddr(normalizePrimitive(tx.fromAddress, '')) : '-'],
+                      [t('transactions.to'),   normalizePrimitive(tx.toAddress, '')   ? shortAddr(normalizePrimitive(tx.toAddress, ''))   : '-'],
                     ].map(([label, val]) => (
                       <div key={label}>
                         <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 3 }}>
@@ -293,18 +457,18 @@ export default function TransactionHistoryPage() {
                         </div>
                       </div>
                     ))}
-                    {tx.txHash && (
+                    {normalizePrimitive(tx.txHash, '') && (
                       <div style={{ gridColumn: '1 / -1' }}>
                         <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 3 }}>
                           {t('transactions.txHash')}
                         </div>
                         <button
                           onClick={() => {
-                            const safeUrl = blockExplorerUrl(tx.network, tx.txHash);
+                            const safeUrl = blockExplorerUrl(normalizePrimitive(tx.network, '-'), normalizePrimitive(tx.txHash, ''));
                             if (safeUrl !== '#') window.open(safeUrl, '_blank', 'noopener,noreferrer');
                           }}
                           style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--primary-blue)', fontFamily: "'SF Mono','Courier New',monospace", fontSize: '0.82rem', wordBreak: 'break-all', textAlign: 'left' }}>
-                          {tx.txHash}
+                          {normalizePrimitive(tx.txHash, '')}
                         </button>
                       </div>
                     )}
