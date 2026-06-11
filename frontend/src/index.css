@@ -1953,6 +1953,9 @@ code {
     background: rgba(255, 255, 255, 0.98);
     flex-direction: column;
     padding: 5rem 1.5rem 2rem;
+    /* Extra bottom padding so the last items clear the Android nav bar */
+    padding-bottom: 80px;
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 80px);
     gap: 0.75rem;
     z-index: 999;
     overflow-y: scroll;
@@ -4029,14 +4032,19 @@ body {
     left: 0;
     top: 0;
     bottom: 0;
-    height: 100vh;
     width: 280px;
     z-index: 1000;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
     border-right: 1px solid var(--border);
     border-bottom: none;
-    overflow-y: auto;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    padding-bottom: 80px;
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 80px);
   }
 
   .rw-admin-sidebar-open {
@@ -4072,6 +4080,9 @@ body {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     touch-action: pan-y;
+    /* Extra bottom padding so the last items clear the Android nav bar */
+    padding-bottom: 80px;
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 80px);
   }
 
   .rw-sidebar-open {
