@@ -29,15 +29,30 @@ function Navbar({ user, onLogout }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Prevent body scroll when mobile menu is open
+  // Prevent body scroll when mobile menu is open (iOS-safe: position:fixed avoids
+  // the Safari bug where overflow:hidden also freezes fixed-element scroll)
   useEffect(() => {
     if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
+      const scrollY = window.scrollY;
+      document.body.dataset.navScrollY = String(scrollY);
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
     } else {
-      document.body.style.overflow = '';
+      const scrollY = parseInt(document.body.dataset.navScrollY || '0', 10);
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      delete document.body.dataset.navScrollY;
+      window.scrollTo(0, scrollY);
     }
     return () => {
-      document.body.style.overflow = '';
+      const scrollY = parseInt(document.body.dataset.navScrollY || '0', 10);
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      delete document.body.dataset.navScrollY;
+      if (scrollY) window.scrollTo(0, scrollY);
     };
   }, [mobileMenuOpen]);
 

@@ -77,11 +77,27 @@ function Dashboard() {
 
   useEffect(() => {
     if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
+      const scrollY = window.scrollY;
+      document.body.dataset.sidebarScrollY = String(scrollY);
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
     } else {
-      document.body.style.overflow = '';
+      const scrollY = parseInt(document.body.dataset.sidebarScrollY || '0', 10);
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      delete document.body.dataset.sidebarScrollY;
+      window.scrollTo(0, scrollY);
     }
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      const scrollY = parseInt(document.body.dataset.sidebarScrollY || '0', 10);
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      delete document.body.dataset.sidebarScrollY;
+      if (scrollY) window.scrollTo(0, scrollY);
+    };
   }, [mobileMenuOpen]);
 
   const handleLogout = async () => {
