@@ -38,7 +38,7 @@
   "env": {
     "NODE_ENV": "production",
     "CI": "false",
-    "REACT_APP_API_URL": "https://crypto-wallet-blush-beta.vercel.app/api",
+    "REACT_APP_API_URL": "/api",
     "REACT_APP_SUPABASE_URL": "https://dselsgxfkjwkwyngenxp.supabase.co",
     "REACT_APP_SUPABASE_ANON_KEY": "sb_publishable_2DDlTKUYtPnTXhOlRbnK7A_isSVVNTK",
     "SUPABASE_URL": "https://dselsgxfkjwkwyngenxp.supabase.co",

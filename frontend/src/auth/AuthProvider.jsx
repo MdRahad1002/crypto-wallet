@@ -41,6 +41,22 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let mounted = true;
 
+    const attemptRefresh = async (retriesLeft = 1) => {
+      try {
+        return await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
+      } catch (err) {
+        const status = err?.response?.status;
+        // Don't retry explicit auth failures — token is genuinely invalid
+        if (status === 401 || status === 403) throw err;
+        // One retry after a short delay to handle Vercel cold-start timeouts
+        if (retriesLeft > 0) {
+          await new Promise(r => setTimeout(r, 1500));
+          return attemptRefresh(retriesLeft - 1);
+        }
+        throw err;
+      }
+    };
+
     const bootstrapSession = async () => {
       try {
         let hasStoredUser = false;
@@ -57,9 +73,7 @@ export function AuthProvider({ children }) {
           return;
         }
 
-        const response = await axios.post(`${API_URL}/auth/refresh`, {}, {
-          withCredentials: true
-        });
+        const response = await attemptRefresh();
 
         if (!mounted) return;
 
