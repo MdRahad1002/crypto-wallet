@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 * {
   margin: 0;
@@ -10,24 +10,24 @@
   --primary-blue: #667eea;
   --secondary-blue: #764ba2;
   --dark-bg: #0f0f1e;
-  --card-bg: rgba(255, 255, 255, 0.95);
-  --text-primary: #2c3e50;
-  --text-secondary: #7f8c8d;
+  --card-bg: rgba(255, 255, 255, 0.97);
+  --text-primary: #1a202c;
+  --text-secondary: #718096;
   --text-on-gradient: white;
-  --border-color: rgba(102, 126, 234, 0.2);
-  --success: #27ae60;
-  --danger: #e74c3c;
-  --warning: #f39c12;
-  --light-bg: #F2F2F7;
-  --shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+  --border-color: rgba(102, 126, 234, 0.15);
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --light-bg: #f0f4f9;
+  --shadow: 0 8px 32px rgba(102, 126, 234, 0.18);
   --gradient-blue: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --transaction-sent: #e74c3c;
-  --transaction-received: #27ae60;
-  --hover-bg: rgba(102, 126, 234, 0.1);
+  --transaction-sent: #dc2626;
+  --transaction-received: #16a34a;
+  --hover-bg: rgba(102, 126, 234, 0.08);
   --transition-fast: 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --transition-base: 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --transition-slow: 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  --focus-ring: 0 0 0 3px rgba(102, 126, 234, 0.25);
+  --focus-ring: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 
 [data-theme="light"] {
@@ -40,7 +40,7 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -51,6 +51,8 @@ body {
   color: var(--text-primary);
   overflow-x: hidden;
   text-rendering: optimizeLegibility;
+  font-size: 15px;
+  line-height: 1.5;
 }
 
 html {
@@ -2778,18 +2780,18 @@ body {
 
 /* Recovery dashboard theme (BlueWallet-inspired) */
 .rw-theme {
-  --bg-main: #ffffff;
-  --bg-soft: #f5f9ff;
+  --bg-main: #f0f4f9;
+  --bg-soft: #f8fafc;
   --bg-card: #ffffff;
-  --primary: #1a73e8;
-  --primary-soft: #e8f0fe;
+  --primary: #667eea;
+  --primary-soft: rgba(102, 126, 234, 0.09);
   --text-main: #0f172a;
   --text-muted: #64748b;
-  --border: #e5e7eb;
+  --border: rgba(102, 126, 234, 0.13);
   --success: #16a34a;
   --danger: #dc2626;
   color: var(--text-main);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', -apple-system, sans-serif;
 }
 
 .rw-page {
@@ -4084,4 +4086,654 @@ body {
     overflow-x: hidden;
     box-sizing: border-box;
   }
+}
+
+/* ================================================================
+   PROFESSIONAL DESIGN ENHANCEMENTS
+   ================================================================ */
+
+/* ── Typography: Apply Inter universally ── */
+body,
+.rw-theme,
+button,
+input,
+select,
+textarea {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ── Refined Page Backgrounds ── */
+.rw-page {
+  background: #f0f4f9;
+  background-image:
+    radial-gradient(ellipse at 15% 15%, rgba(102, 126, 234, 0.06) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 85%, rgba(118, 75, 162, 0.05) 0%, transparent 55%);
+}
+
+/* ── Premium Sidebar ── */
+.rw-sidebar,
+.rw-admin-sidebar {
+  background: linear-gradient(180deg, #ffffff 0%, #fafbff 100%);
+  border-right: 1px solid rgba(102, 126, 234, 0.12);
+  box-shadow: 4px 0 28px rgba(102, 126, 234, 0.07);
+  padding: 28px 18px;
+}
+
+.rw-brand {
+  padding: 4px 6px 24px;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+  margin-bottom: 24px;
+}
+
+/* Nav links — refined active/hover treatment */
+.rw-nav-link,
+.rw-admin-link {
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #4b5563;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  letter-spacing: -0.01em;
+  border-left: 3px solid transparent;
+  text-decoration: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  background: transparent;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+}
+
+.rw-nav-link.active,
+.rw-nav-link:hover,
+.rw-admin-link.active,
+.rw-admin-link:hover {
+  background: rgba(102, 126, 234, 0.08);
+  color: #667eea;
+  border-left-color: #667eea;
+  font-weight: 600;
+}
+
+/* ── Metric Cards — elevated, clean ── */
+.rw-card {
+  background: #ffffff;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  border-radius: 18px;
+  box-shadow: 0 2px 10px rgba(102, 126, 234, 0.07), 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.22s ease, transform 0.22s ease;
+  padding: 24px;
+}
+
+.rw-card:hover {
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.13), 0 2px 8px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+.rw-card h3 {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: #94a3b8;
+  margin: 0 0 12px;
+}
+
+.rw-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 0;
+  letter-spacing: -0.5px;
+}
+
+/* ── Admin Metric Cards ── */
+.rw-admin-card {
+  background: #ffffff;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  border-radius: 18px;
+  box-shadow: 0 2px 10px rgba(102, 126, 234, 0.07), 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.22s ease, transform 0.22s ease;
+  padding: 24px;
+}
+
+.rw-admin-card:hover {
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.13);
+  transform: translateY(-2px);
+}
+
+.rw-admin-card h3 {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: #94a3b8;
+  margin: 0 0 12px;
+}
+
+.rw-admin-metric {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #0f172a;
+}
+
+.rw-admin-sub {
+  font-size: 12.5px;
+  color: #94a3b8;
+  margin-top: 5px;
+}
+
+/* ── Page Headers ── */
+.rw-header h1,
+.rw-admin-header h1 {
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: -0.7px;
+  color: #0f172a;
+}
+
+.rw-muted {
+  color: #94a3b8;
+  font-size: 13.5px;
+}
+
+.rw-user-box {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+/* ── Section headers ── */
+.rw-section-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.25px;
+  margin: 0;
+}
+
+/* ── Portfolio rows ── */
+.rw-portfolio-row {
+  padding: 13px 0;
+  font-size: 14px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #374151;
+}
+
+.rw-portfolio-row:last-child {
+  border-bottom: none;
+}
+
+/* ── Transaction Items ── */
+.rw-transaction-item {
+  background: #ffffff;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  border-radius: 14px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.rw-transaction-item:hover {
+  border-color: rgba(102, 126, 234, 0.25);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.1);
+  transform: translateY(-2px);
+}
+
+.rw-transaction-type {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #0f172a;
+  margin-bottom: 3px;
+}
+
+.rw-transaction-date,
+.rw-transaction-hash {
+  color: #94a3b8;
+}
+
+.rw-transaction-value {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  font-family: 'Inter', 'SF Mono', monospace;
+}
+
+/* ── Status Badges/Pills ── */
+.rw-status-pill,
+.rw-status-badge {
+  border-radius: 8px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.rw-status-success,
+.rw-status-confirmed {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.rw-status-failed {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.rw-status-pending,
+.rw-status-warning {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+/* ── rw-btn improvements ── */
+.rw-btn {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.rw-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rw-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.rw-btn-primary:hover:not(:disabled) {
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.45);
+  transform: translateY(-1px);
+}
+
+.rw-btn-secondary {
+  background: rgba(102, 126, 234, 0.08);
+  color: #667eea;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.rw-btn-secondary:hover:not(:disabled) {
+  background: rgba(102, 126, 234, 0.14);
+  border-color: rgba(102, 126, 234, 0.38);
+  transform: translateY(-1px);
+}
+
+.rw-btn-secondary.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* ── Admin Input Fields ── */
+.rw-admin-input {
+  border: 1.5px solid #e2e8f0;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  font-family: 'Inter', sans-serif;
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 14px;
+  color: #0f172a;
+  background: #ffffff;
+  width: 100%;
+}
+
+.rw-admin-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+}
+
+/* ── Admin Table ── */
+.rw-admin-table {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.rw-admin-table th {
+  background: #f8fafc;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #94a3b8;
+  border-bottom: 2px solid #e8ecf4;
+  padding: 14px 16px;
+}
+
+.rw-admin-table td {
+  padding: 14px 16px;
+  font-size: 14px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #374151;
+}
+
+.rw-admin-table tr:last-child td {
+  border-bottom: none;
+}
+
+.rw-admin-table tr:hover td {
+  background: #f8fafc;
+}
+
+/* ── Admin Table Wrapper ── */
+.rw-admin-table-wrapper {
+  border: 1px solid #e8ecf4;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* ── Admin Section Header ── */
+.rw-admin-section-header {
+  margin-bottom: 14px;
+}
+
+.rw-admin-section-header h2 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.3px;
+}
+
+/* ── Admin Badge ── */
+.rw-admin-badge {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+/* ── Notifications ── */
+.rw-notification {
+  border-radius: 14px;
+  border: 1px solid #e8ecf4;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s ease;
+}
+
+.rw-notification:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+  transform: translateX(0);
+}
+
+.rw-notification-unread {
+  border-left: 3px solid #667eea;
+  background: rgba(102, 126, 234, 0.02);
+}
+
+/* ── Alert banners ── */
+.rw-alert {
+  border-radius: 14px;
+  padding: 15px 20px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.rw-alert-warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: #92400e;
+  border: 1px solid rgba(245, 158, 11, 0.28);
+}
+
+.rw-alert-info {
+  background: rgba(102, 126, 234, 0.08);
+  color: #3730a3;
+  border: 1px solid rgba(102, 126, 234, 0.22);
+}
+
+.rw-alert-success {
+  background: rgba(22, 163, 74, 0.09);
+  color: #14532d;
+  border: 1px solid rgba(22, 163, 74, 0.22);
+}
+
+/* ── Auth card ── */
+.auth-card {
+  border-radius: 24px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18), 0 8px 24px rgba(102, 126, 234, 0.12);
+}
+
+/* ── Wallet cards ── */
+.wallet-card {
+  background: linear-gradient(135deg, #667eea 0%, #5a67d8 40%, #764ba2 100%);
+  border-radius: 24px;
+  box-shadow: 0 16px 48px rgba(102, 126, 234, 0.38);
+}
+
+/* ── Price cards ── */
+.price-card {
+  border-radius: 16px;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.06);
+  transition: all 0.2s ease;
+}
+
+.price-card:hover {
+  border-color: rgba(102, 126, 234, 0.25);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.12);
+  transform: translateY(-2px);
+}
+
+/* ── Dashboard metric cards ── */
+.card {
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.1), 0 1px 4px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(102, 126, 234, 0.12);
+  transition: box-shadow 0.22s ease, transform 0.22s ease;
+}
+
+.card:hover {
+  box-shadow: 0 12px 40px rgba(102, 126, 234, 0.18), 0 4px 12px rgba(0, 0, 0, 0.06);
+  transform: translateY(-4px) scale(1.01);
+  border-color: rgba(102, 126, 234, 0.25);
+}
+
+.card-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: var(--text-secondary);
+}
+
+.card-value {
+  font-size: 2.5rem;
+  font-weight: 900;
+  letter-spacing: -1.2px;
+}
+
+/* ── Modal ── */
+.modal-content {
+  border-radius: 24px;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.22), 0 8px 24px rgba(102, 126, 234, 0.1);
+}
+
+/* ── Transaction list (gradient bg page) ── */
+.transaction-list {
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.transaction-item {
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.transaction-item:hover {
+  background: rgba(102, 126, 234, 0.04);
+  border-color: rgba(102, 126, 234, 0.2);
+  transform: translateX(4px);
+}
+
+.transaction-type {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.transaction-amount {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+/* ── Form inputs ── */
+.form-input,
+.form-select {
+  border: 1.5px solid var(--border-color);
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  transform: none;
+}
+
+/* ── Primary buttons ── */
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.32);
+  letter-spacing: -0.2px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 10px 32px rgba(102, 126, 234, 0.48);
+  transform: translateY(-3px);
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.28);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 126, 234, 0.48);
+}
+
+/* ── Recovery wallet log items ── */
+.rw-admin-log-item {
+  border: 1px solid #e8ecf4;
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: #ffffff;
+  transition: box-shadow 0.2s ease;
+}
+
+.rw-admin-log-item:hover {
+  box-shadow: 0 2px 10px rgba(102, 126, 234, 0.08);
+  border-color: rgba(102, 126, 234, 0.2);
+}
+
+/* ── Admin modal ── */
+.rw-admin-modal {
+  border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2), 0 8px 20px rgba(102, 126, 234, 0.1);
+  border: 1px solid #e8ecf4;
+}
+
+/* ── Admin warning banner ── */
+.rw-admin-warning {
+  border-radius: 14px;
+  border: 1px solid rgba(220, 38, 38, 0.22);
+  background: rgba(220, 38, 38, 0.06);
+  padding: 18px 20px;
+}
+
+/* ── Empty state ── */
+.empty-state-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+
+/* ── Spinner ── */
+.spinner {
+  border: 3px solid rgba(102, 126, 234, 0.15);
+  border-top: 3px solid var(--primary-blue);
+  width: 48px;
+  height: 48px;
+  animation: spin 0.75s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+.spinner::after {
+  display: none;
+}
+
+/* ── Unread notification badge ── */
+.rw-unread-badge {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+
+/* ── Admin brand header ── */
+.rw-admin-brand {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 28px;
+}
+
+/* ── Recovery page boxes ── */
+.rw-recover-box {
+  border-radius: 16px;
+  border: 1px solid #e8ecf4;
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+/* ── Chart switch buttons ── */
+.rw-chart-switch {
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+/* ── Status indicator dot ── */
+.rw-status-dot,
+.rw-admin-status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
+  animation: pulse 2s ease-in-out infinite;
 }

@@ -446,7 +446,7 @@ function Dashboard() {
           <div className="rw-header" id="dashboard">
             <div>
               <h1>{t('dashboard.welcomeTitle', { name: userName })}</h1>
-              <p className="rw-muted">Clean recovery-first wallet overview</p>
+              <p className="rw-muted">{t('dashboard.subtitle', 'Your assets and portfolio at a glance')}</p>
             </div>
             <div className="rw-user-box">
               {t('dashboard.loggedInAs', { name: userName, email: userEmail })}
