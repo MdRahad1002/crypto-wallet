@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { transactionAPI } from '../services/api';
+import { transactionAPI, pricesAPI } from '../services/api';
 import ExportTransactions from './ExportTransactions';
 import Icon from './Icon';
 import { blockExplorerUrl } from '../utils/sanitizeUrl';
@@ -25,6 +25,22 @@ function formatDate(ts, lng) {
 function shortAddr(addr) {
   if (!addr || addr.length < 12) return addr || '-';
   return addr.slice(0, 8) + '...' + addr.slice(-6);
+}
+
+const PRICE_KEY = {
+  BTC: 'bitcoin', ETH: 'ethereum', USDT: 'tether',
+  MATIC: 'matic-network', BNB: 'binancecoin', WBTC: 'bitcoin',
+};
+
+function toUsd(amount, crypto, prices) {
+  const key = PRICE_KEY[String(crypto || '').toUpperCase()] || String(crypto || '').toLowerCase();
+  const rate = prices?.[key]?.usd;
+  if (!rate || !amount) return null;
+  const val = Number(amount) * rate;
+  if (!Number.isFinite(val) || val <= 0) return null;
+  return val < 0.01
+    ? '< $0.01'
+    : '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function TxIcon({ type }) {
@@ -134,6 +150,13 @@ export default function TransactionHistoryPage() {
   const [autoRefresh, setAutoRefresh]   = useState(true);
   const [refreshing, setRefreshing]     = useState(false);
   const latestRequestRef = useRef(0);
+
+  const [prices, setPrices] = useState({});
+  useEffect(() => {
+    pricesAPI.getLivePrices()
+      .then(({ data }) => setPrices(data || {}))
+      .catch(() => {});
+  }, []);
 
   const makeStableTxId = useCallback((tx, idx = 0) => {
     const hash = normalizePrimitive(tx?.txHash, '').trim().toLowerCase();
@@ -432,7 +455,13 @@ export default function TransactionHistoryPage() {
                       <div className={'transaction-amount ' + (isSend ? 'negative' : 'positive')}>
                         {isSend ? '- ' : '+ '}
                         {parseFloat(tx.amount || 0).toFixed(6).replace(/\.?0+$/, '') || '0'}
+                        {' '}{tx.cryptocurrency || ''}
                       </div>
+                      {toUsd(tx.amount, tx.cryptocurrency, prices) && (
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 500, marginTop: 2 }}>
+                          {toUsd(tx.amount, tx.cryptocurrency, prices)}
+                        </div>
+                      )}
                     </div>
                     <Icon name={expanded ? 'chevronUp' : 'chevronDown'} size={18} color="var(--text-secondary)" />
                   </div>
@@ -450,6 +479,7 @@ export default function TransactionHistoryPage() {
                       [t('transactions.network'),       normalizePrimitive(tx.network, '-')],
                       [t('transactions.block'),         String(tx.blockNumber || '-')],
                       [t('transactions.confirmations'), tx.confirmations != null ? String(tx.confirmations) : '-'],
+                      ['Value (USD)', toUsd(tx.amount, tx.cryptocurrency, prices) || '-'],
                       [t('transactions.from'), normalizePrimitive(tx.fromAddress, '') ? shortAddr(normalizePrimitive(tx.fromAddress, '')) : '-'],
                       [t('transactions.to'),   normalizePrimitive(tx.toAddress, '')   ? shortAddr(normalizePrimitive(tx.toAddress, ''))   : '-'],
                     ].map(([label, val]) => (
